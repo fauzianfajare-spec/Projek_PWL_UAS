@@ -14,6 +14,7 @@ cryptography==49.0.0
 daphne==4.2.2
 Django==4.2
 django-ckeditor==6.7.3
+django-cors-headers==4.9.0
 django-js-asset==3.1.2
 djangorestframework==3.17.1
 firebase_admin==7.4.0
@@ -58,4 +59,5 @@ typing_extensions==4.15.0
 tzdata==2026.2
 ujson==5.13.0
 urllib3==2.7.0
+whitenoise==6.12.0
 zope.interface==8.5
