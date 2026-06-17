@@ -151,7 +151,7 @@ CORS_ALLOWED_ORIGINS = [
 
 # PERBAIKAN: Menghapus deklarasi ganda BASE_DIR yang memakai os.path, 
 # dan menyinkronkannya menggunakan Path object bawaan Django modern.
-FIREBASE_KEY_PATH = BASE_DIR / 'firebase-key.json'
+FIREBASE_KEY_PATH = Path('/etc/secrets/firebase-key.json')
 
 # Inisialisasi Firebase Admin SDK secara global saat server Django berjalan
 if not firebase_admin._apps:
