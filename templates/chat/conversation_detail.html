@@ -409,6 +409,18 @@
     const conversationId = "{{ conversation.id }}";
     const userId = "{{ my_uid }}";
     const currentUsername = "{{ my_username }}";
+    const daftarKataKasar = {{ daftar_kata_kasar_json|safe }};
+    
+    function filterKataKasarJS(text) {
+        if (!text) return text;
+        let temp = text;
+        daftarKataKasar.forEach(word => {
+            let escaped = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            let regex = new RegExp('\\b' + escaped + '\\b', 'gi');
+            temp = temp.replace(regex, '*'.repeat(word.length));
+        });
+        return temp;
+    }
 
     const firebaseConfig = {
         apiKey: "AIzaSy...",
@@ -514,7 +526,7 @@
                         <div class="message-content">
                             ${!isMe ? `<p class="message-sender">${message.sender}</p>` : ''}
                             ${message.image ? '<img src="' + message.image + '" class="message-image">' : ''}
-                            <p class="message-text">${message.text || ''}</p>
+                            <p class="message-text">${filterKataKasarJS(message.text || '')}</p>
                             ${message.file ? '<a href="' + message.file + '" class="message-file" target="_blank"><i class="fas fa-file"></i> Download</a>' : ''}
                             <p class="message-time">${timeStr}</p>
                         </div>

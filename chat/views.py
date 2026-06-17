@@ -9,14 +9,15 @@ from firebase_admin import credentials, firestore, auth
 import os
 import traceback
 from django.contrib import messages
-from google import genai
+from django.conf import settings
+
 
 # ========================================================
 # 1. KONFIGURASI KONEKSI FIREBASE (Berjalan 1 Kali)
 # ========================================================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KEY_PATH = os.path.join(BASE_DIR, 'firebase-key.json')
-
+GEMINI_API_KEY = "AQ.Ab8RN6KNKQ5gGZW-yR7r6bC17zhEqzdoKMRNlMSMkVCncBPdtQ"
 if not firebase_admin._apps:
     cred = credentials.Certificate(KEY_PATH)
     firebase_admin.initialize_app(cred)
@@ -237,7 +238,7 @@ def chat_list(request):
                     
                     messages_list.sort(key=ambil_waktu_terakhir, reverse=True)
                     last_message = messages_list[0]
-                    conv_obj.last_message_text = last_message.get('text') or 'Mengirim gambar/file'
+                    conv_obj.last_message_text = filter_kata_kasar(last_message.get('text') or 'Mengirim gambar/file')
                 else:
                     conv_obj.last_message_text = "Belum ada obrolan"
             except Exception as e:
@@ -324,7 +325,7 @@ def conversation_detail(request, pk):
                     
                     messages_list.sort(key=ambil_waktu_terakhir, reverse=True)
                     last_message = messages_list[0]
-                    c_obj.last_message_text = last_message.get('text') or 'Mengirim gambar/file'
+                    c_obj.last_message_text = filter_kata_kasar(last_message.get('text') or 'Mengirim gambar/file')
                 else:
                     c_obj.last_message_text = "Belum ada obrolan"
             except Exception as e:
@@ -386,6 +387,7 @@ def conversation_detail(request, pk):
                         })
                 
                 data['list_reaksi_bersih'] = list_reaksi_bersih
+                data['text'] = filter_kata_kasar(data.get('text', ''))
                 chat_messages.append(data)
                 
             chat_messages.sort(key=lambda msg: msg.get('created_at', {}).get('seconds', 0))
@@ -398,6 +400,9 @@ def conversation_detail(request, pk):
         print(f"Error in conversation_detail: {traceback.format_exc()}")
         return redirect('chat:chat_list')
 
+    daftar_kata = muat_kata_kasar()
+    daftar_kata_json = json.dumps(daftar_kata)
+
     return render(request, 'chat/conversation_detail.html', {
         'conversation': conversation,
         'conversations': conversations,
@@ -405,7 +410,8 @@ def conversation_detail(request, pk):
         'my_username': my_username,
         'my_uid': my_uid,
         'users': added_friends,
-        'is_participant': is_participant
+        'is_participant': is_participant,
+        'daftar_kata_kasar_json': daftar_kata_json,
     })
 
 @firebase_login_required 
@@ -525,6 +531,7 @@ def send_message(request):
     my_uid = request.session.get('firebase_user_uid')
     conversation_id = request.POST.get('conversation_id')
     text = request.POST.get('text', '')
+    text = filter_kata_kasar(text)
     
     image_url = None
     file_url = None 
