@@ -550,6 +550,16 @@
             sendMessage(formData);
         });
 
+        $(document).on('click', '.btn-delete-message', function () {
+            const messageId = $(this).data('message-id');
+            if (confirm('Hapus pesan ini?')) {
+                let deleteUrl = `/chat/api/delete-message/${messageId}/`;
+                $.post(deleteUrl, {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                });
+            }
+        });
+
         aktifkanRealtimeChat();
     });
 
