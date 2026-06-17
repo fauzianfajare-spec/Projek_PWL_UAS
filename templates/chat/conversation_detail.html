@@ -120,25 +120,7 @@
                     {% endif %}
 
                     <p class="message-time">{{ message.created_at|date:"H:i" }}</p>
-
-                    {% if message.reactions %}
-                    <div class="message-reactions">
-                        {% for emoji, users in message.reactions.items %}
-                        <div class="reaction" title="{{ users|join:', ' }}">
-                            {{ emoji }} {{ users|length }}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
                 </div>
-
-                {% if message.sender == my_username %}
-                <div class="message-actions">
-                    <button class="btn-delete-message" data-message-id="{{ message.id_firebase }}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-                {% endif %}
             </div>
             {% empty %}
             <p class="no-messages">Belum ada pesan. Mulai percakapan!</p>
@@ -147,70 +129,45 @@
 
         <div class="chat-input-area">
             {% if conversation.conversation_type == 'group' %}
-
-            {% if my_username in conversation.participants.all|stringformat:"s" or request.user in
-            conversation.participants.all %}
-
+            {% if request.user in conversation.participants.all %}
             <form id="messageForm" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="conversation_id" value="{{ conversation.id }}">
-
                 <div class="input-wrapper">
                     <input type="file" id="imageInput" class="hidden-input" accept="image/*">
                     <input type="file" id="fileInput" class="hidden-input">
 
-                    <button type="button" class="btn-attach" id="attachImage">
-                        <i class="fas fa-image"></i>
-                    </button>
-                    <button type="button" class="btn-attach" id="attachFile">
-                        <i class="fas fa-paperclip"></i>
-                    </button>
+                    <button type="button" class="btn-attach" id="attachImage"><i class="fas fa-image"></i></button>
+                    <button type="button" class="btn-attach" id="attachFile"><i class="fas fa-paperclip"></i></button>
 
                     <textarea id="messageText" name="text" class="message-input" placeholder="Ketik pesan..."
                         rows="1"></textarea>
-
-                    <button type="submit" class="btn-send">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+                    <button type="submit" class="btn-send"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </form>
-
             {% else %}
-
             <div class="alert alert-secondary text-center m-0" role="alert"
                 style="background-color: #f0f2f5; border: none; color: #667781; padding: 10px;">
                 <i class="fas fa-ban me-2"></i> Anda tidak dapat mengirim pesan ke grup ini karena Anda bukan lagi
                 peserta.
             </div>
-
             {% endif %}
-
             {% else %}
-
             <form id="messageForm" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="conversation_id" value="{{ conversation.id }}">
-
                 <div class="input-wrapper">
                     <input type="file" id="imageInput" class="hidden-input" accept="image/*">
                     <input type="file" id="fileInput" class="hidden-input">
 
-                    <button type="button" class="btn-attach" id="attachImage">
-                        <i class="fas fa-image"></i>
-                    </button>
-                    <button type="button" class="btn-attach" id="attachFile">
-                        <i class="fas fa-paperclip"></i>
-                    </button>
+                    <button type="button" class="btn-attach" id="attachImage"><i class="fas fa-image"></i></button>
+                    <button type="button" class="btn-attach" id="attachFile"><i class="fas fa-paperclip"></i></button>
 
                     <textarea id="messageText" name="text" class="message-input" placeholder="Ketik pesan..."
                         rows="1"></textarea>
-
-                    <button type="submit" class="btn-send">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+                    <button type="submit" class="btn-send"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </form>
-
             {% endif %}
         </div>
     </div>
@@ -220,10 +177,6 @@
     .hidden-input {
         display: none;
     }
-
-    /* =========================================================== */
-    /* LAYOUT UTAMA                                                */
-    /* =========================================================== */
 
     .chat-container {
         display: flex;
@@ -328,11 +281,6 @@
         justify-content: center;
         padding: 4px;
         flex-shrink: 0;
-        transition: color 0.2s;
-    }
-
-    .btn-attach:hover {
-        color: #4a61d1;
     }
 
     .message-input {
@@ -362,14 +310,8 @@
         justify-content: center;
         cursor: pointer;
         flex-shrink: 0;
-        transition: background 0.2s;
     }
 
-    .btn-send:hover {
-        background: #4a61d1;
-    }
-
-    /* Layout Chat Bubbles */
     .message {
         display: flex;
         align-items: flex-start;
@@ -400,11 +342,6 @@
         font-weight: bold;
         margin-right: 10px;
         flex-shrink: 0;
-    }
-
-    .message.sent .message-avatar-placeholder {
-        margin-right: 0;
-        margin-left: 10px;
     }
 
     .message-content {
@@ -456,24 +393,6 @@
         text-align: right;
     }
 
-    .message-actions {
-        margin: 0 10px;
-        align-self: center;
-    }
-
-    .btn-delete-message {
-        background: none;
-        border: none;
-        color: #e74c3c;
-        cursor: pointer;
-        opacity: 0;
-        transition: opacity 0.2s;
-    }
-
-    .message:hover .btn-delete-message {
-        opacity: 1;
-    }
-
     .no-messages {
         text-align: center;
         color: #bbb;
@@ -500,11 +419,10 @@
         appId: "..."
     };
 
-    let db;
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
-    db = firebase.firestore();
+    const db = firebase.firestore();
 
     $(document).ready(function () {
         $('#messageText').on('input', function () {
@@ -514,10 +432,7 @@
             }
         });
 
-        $('#attachImage').click(function () {
-            $('#imageInput').click();
-        });
-
+        $('#attachImage').click(function () { $('#imageInput').click(); });
         $('#imageInput').change(function () {
             if (this.files[0]) {
                 const formData = new FormData($('#messageForm')[0]);
@@ -527,10 +442,7 @@
             }
         });
 
-        $('#attachFile').click(function () {
-            $('#fileInput').click();
-        });
-
+        $('#attachFile').click(function () { $('#fileInput').click(); });
         $('#fileInput').change(function () {
             if (this.files[0]) {
                 const formData = new FormData($('#messageForm')[0]);
@@ -543,9 +455,7 @@
         $('#messageForm').submit(function (e) {
             e.preventDefault();
             const textInput = $('#messageText').val().trim();
-            if (textInput === '' && !$('#imageInput').val() && !$('#fileInput').val()) {
-                return;
-            }
+            if (textInput === '' && !$('#imageInput').val() && !$('#fileInput').val()) { return; }
             const formData = new FormData(this);
             sendMessage(formData);
         });
@@ -555,46 +465,34 @@
 
     function scrollToBottom() {
         const container = $('#messagesContainer');
-        if (container.length) {
-            container.scrollTop(container[0].scrollHeight);
-        }
+        if (container.length) { container.scrollTop(container[0].scrollHeight); }
     }
 
     function sendMessage(formData) {
-        if (!formData.has('conversation_id')) {
-            formData.append('conversation_id', conversationId);
-        }
-
+        if (!formData.has('conversation_id')) { formData.append('conversation_id', conversationId); }
         $.ajax({
             url: '{% url "chat:send_message" %}',
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
-            success: function () {
-                $('#messageText').val('').css('height', '40px');
-            },
-            error: function () {
-                alert('Error sending message');
-            }
+            success: function () { $('#messageText').val('').css('height', '40px'); },
+            error: function () { alert('Error sending message'); }
         });
     }
 
+    // Fungsi sinkronisasi pesan realtime dari Firestore
     function aktifkanRealtimeChat() {
         db.collection('messages')
             .where('conversation_id', '==', conversationId)
             .onSnapshot(function (snapshot) {
-
                 $('#messagesContainer').html('');
                 let listPesan = [];
 
                 snapshot.forEach(function (doc) {
                     let data = doc.data();
                     data.id_firebase = doc.id;
-
-                    if (!data.is_deleted) {
-                        listPesan.push(data);
-                    }
+                    if (!data.is_deleted) { listPesan.push(data); }
                 });
 
                 listPesan.sort((a, b) => {
@@ -606,20 +504,13 @@
                 listPesan.forEach(function (message) {
                     let isMe = message.sender_id === userId || message.sender === currentUsername;
                     let messageClass = isMe ? "sent" : "received";
-
                     let dateObj = message.created_at ? new Date(message.created_at.seconds * 1000) : new Date();
                     let timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
                     let initials = message.sender ? message.sender.substring(0, 2).toUpperCase() : "??";
 
                     const html = `
                     <div class="message ${messageClass}" data-message-id="${message.id_firebase}">
-                        ${!isMe ? `
-                            <div class="message-avatar-placeholder">
-                                ${initials}
-                            </div>
-                        ` : ''}
-                        
+                        ${!isMe ? `<div class="message-avatar-placeholder">${initials}</div>` : ''}
                         <div class="message-content">
                             ${!isMe ? `<p class="message-sender">${message.sender}</p>` : ''}
                             ${message.image ? '<img src="' + message.image + '" class="message-image">' : ''}
@@ -627,20 +518,10 @@
                             ${message.file ? '<a href="' + message.file + '" class="message-file" target="_blank"><i class="fas fa-file"></i> Download</a>' : ''}
                             <p class="message-time">${timeStr}</p>
                         </div>
-                        ${isMe ? `
-                        <div class="message-actions">
-                            <button class="btn-delete-message" data-message-id="${message.id_firebase}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                        ` : ''}
-                    </div>
-                `;
+                    </div>`;
                     $('#messagesContainer').append(html);
                 });
-
                 scrollToBottom();
-
             }, function (error) {
                 console.error("Firebase Snapshot Error:", error);
             });
