@@ -9,14 +9,15 @@
     {% if messages %}
     <div class="toast-container position-absolute top-0 start-50 translate-middle-x p-3" style="z-index: 1055;">
         {% for message in messages %}
-            <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show shadow" role="alert">
-                <strong>{% if message.tags == 'error' %}Gagal!{% else %}Berhasil!{% endif %}</strong> {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show shadow"
+            role="alert">
+            <strong>{% if message.tags == 'error' %}Gagal!{% else %}Berhasil!{% endif %}</strong> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         {% endfor %}
     </div>
     {% endif %}
-    
+
     <div class="chat-sidebar">
         <div class="sidebar-panel active" id="panel-main-chats">
             <div class="sidebar-header">
@@ -27,86 +28,80 @@
                     </button>
                 </div>
             </div>
-            
+
             <div class="chat-list">
                 {% if conversations %}
-                    {% for conversation in conversations %}
-                        <div class="chat-item-wrapper position-relative">
-                            <a href="{% url 'chat:conversation_detail' conversation.id %}" class="chat-item">
-                                <div class="chat-avatar" style="display: flex; align-items: center;">
-                                    {% if conversation.conversation_type == 'group' %}
-                                        {% if conversation.group_avatar %}
-                                            <img src="{{ conversation.group_avatar.url }}" alt="{{ conversation.name }}">
-                                        {% else %}
-                                            <img src="https://ui-avatars.com/api/?name={{ conversation.name }}&background=667eea&color=fff" alt="{{ conversation.name }}">
-                                        {% endif %}
-                                    {% else %}
-                                        {% for participant in conversation.participants.all %}
-                                            {% if participant.username != request.session.username %}
-                                                <img src="https://ui-avatars.com/api/?name={{ participant.username }}&background=667eea&color=fff" alt="{{ participant.username }}">
-                                            {% endif %}
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-                                <div class="chat-info">
-                                    <h4 class="chat-name">
-                                        {% if conversation.conversation_type == 'group' %}
-                                            {{ conversation.name }}
-                                        {% else %}
-                                            {% for participant in conversation.participants.all %}
-                                                {% if participant.username != request.session.username %}
-                                                    {{ participant.get_full_name|default:participant.username }}
-                                                {% endif %}
-                                            {% endfor %}
-                                        {% endif %}
-                                    </h4>
-                                    <p class="chat-preview">
-                                        {{ conversation.last_message_text|truncatewords:10 }}
-                                    </p>
-                                </div>
-                            </a>
-
-                            <div class="dropdown chat-item-dropdown">
-                                <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                    {% if conversation.conversation_type == 'group' %}
-                                        <li>
-                                            <a class="dropdown-item text-warning" href="#" onclick="confirmAction(event, 'Apakah Anda yakin ingin keluar dari grup ini?', '{% url 'chat:leave_group' conversation.id %}')">
-                                                <i class="fas fa-sign-out-alt fa-fw me-2"></i>Keluar Grup
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item text-primary" href="#" onclick="openAddMemberPanel(event, '{{ conversation.id }}', '{{ conversation.name }}')">
-                                                <i class="fas fa-user-plus fa-fw me-2"></i>Tambah Anggota
-                                            </a>
-                                        </li>
-                                        {% if conversation.created_by == request.session.firebase_user_uid %}
-                                        <li>
-                                            <a class="dropdown-item text-danger" href="#" onclick="confirmAction(event, 'Apakah Anda yakin ingin menghapus grup ini untuk semua orang?', '{% url 'chat:delete_conversation' conversation.id %}')">
-                                                <i class="fas fa-trash fa-fw me-2"></i>Hapus Grup
-                                            </a>
-                                        </li>
-                                        {% endif %}
-                                    {% else %}
-                                        <li>
-                                            <a class="dropdown-item text-warning" href="#" onclick="confirmAction(event, 'Apakah Anda yakin ingin memblokir user ini?', '#')">
-                                                <i class="fas fa-ban fa-fw me-2"></i>Blokir User
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item text-danger" href="#" onclick="confirmAction(event, 'Apakah Anda yakin ingin menghapus chat ini?', '{% url 'chat:delete_conversation' conversation.id %}')">
-                                                <i class="fas fa-trash fa-fw me-2"></i>Hapus Chat
-                                            </a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </div>
+                {% for conversation in conversations %}
+                <div class="chat-item-wrapper position-relative">
+                    <a href="{% url 'chat:conversation_detail' conversation.id %}" class="chat-item">
+                        <div class="chat-avatar" style="display: flex; align-items: center;">
+                            {% if conversation.conversation_type == 'group' %}
+                            {% if conversation.group_avatar %}
+                            <img src="{{ conversation.group_avatar.url }}" alt="{{ conversation.name }}">
+                            {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ conversation.name }}&background=667eea&color=fff"
+                                alt="{{ conversation.name }}">
+                            {% endif %}
+                            {% else %}
+                            {% for participant in conversation.participants.all %}
+                            {% if participant.username != request.session.username %}
+                            <img src="https://ui-avatars.com/api/?name={{ participant.username }}&background=667eea&color=fff"
+                                alt="{{ participant.username }}">
+                            {% endif %}
+                            {% endfor %}
+                            {% endif %}
                         </div>
-                    {% endfor %}
+                        <div class="chat-info">
+                            <h4 class="chat-name">
+                                {% if conversation.conversation_type == 'group' %}
+                                {{ conversation.name }}
+                                {% else %}
+                                {% for participant in conversation.participants.all %}
+                                {% if participant.username != request.session.username %}
+                                {{ participant.get_full_name|default:participant.username }}
+                                {% endif %}
+                                {% endfor %}
+                                {% endif %}
+                            </h4>
+                            <p class="chat-preview">
+                                {{ conversation.last_message_text|truncatewords:10 }}
+                            </p>
+                        </div>
+                    </a>
+
+                    <div class="dropdown chat-item-dropdown">
+                        <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            {% if conversation.conversation_type == 'group' %}
+                            <li>
+                                <a class="dropdown-item text-warning" href="#"
+                                    onclick="confirmAction(event, 'Apakah Anda yakin ingin keluar dari grup ini?', '{% url 'chat:leave_group' conversation.id %}')">
+                                    <i class="fas fa-sign-out-alt fa-fw me-2"></i>Keluar Grup
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-primary" href="#"
+                                    onclick="openAddMemberPanel(event, '{{ conversation.id }}', '{{ conversation.name }}')">
+                                    <i class="fas fa-user-plus fa-fw me-2"></i>Tambah Anggota
+                                </a>
+                            </li>
+                            {% else %}
+                            <li>
+                                <a class="dropdown-item text-danger" href="#"
+                                    onclick="confirmAction(event, 'Apakah Anda yakin ingin menghapus chat ini?', '{% url 'chat:delete_conversation' conversation.id %}')">
+                                    <i class="fas fa-trash fa-fw me-2"></i>Hapus Chat
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
                 {% else %}
-                    <p class="no-chats">Tidak ada chat. Mulai percakapan baru!</p>
+                <p class="no-chats">Tidak ada chat. Mulai percakapan baru!</p>
                 {% endif %}
             </div>
         </div>
@@ -145,28 +140,30 @@
                     </div>
                 </a>
             </div>
-            
+
             <div class="contact-section-title">Kontak di OWI Chat</div>
 
             <div class="wa-contact-list" id="friendListContainer">
                 {% if users %}
-                    {% for user in users %}
-                    <a href="{% url 'chat:start_conversation' user.user.id %}" class="wa-contact-item" data-name="{{ user.display_name|lower }}">
-                        <div class="wa-avatar">
-                            {% if user.profile_image %}
-                                <img src="{{ user.profile_image.url }}" alt="{{ user.display_name }}">
-                            {% else %}
-                                <img src="https://ui-avatars.com/api/?name={{ user.display_name }}&background=764ba2&color=fff" alt="{{ user.display_name }}">
-                            {% endif %}
-                        </div>
-                        <div class="wa-contact-info">
-                            <h5>{{ user.display_name }}</h5>
-                            <small>Ada, saya menggunakan OWI Chat</small>
-                        </div>
-                    </a>
-                    {% endfor %}
+                {% for user in users %}
+                <a href="{% url 'chat:start_conversation' user.user.id %}" class="wa-contact-item"
+                    data-name="{{ user.display_name|lower }}">
+                    <div class="wa-avatar">
+                        {% if user.profile_image %}
+                        <img src="{{ user.profile_image.url }}" alt="{{ user.display_name }}">
+                        {% else %}
+                        <img src="https://ui-avatars.com/api/?name={{ user.display_name }}&background=764ba2&color=fff"
+                            alt="{{ user.display_name }}">
+                        {% endif %}
+                    </div>
+                    <div class="wa-contact-info">
+                        <h5>{{ user.display_name }}</h5>
+                        <small>Ada, saya menggunakan OWI Chat</small>
+                    </div>
+                </a>
+                {% endfor %}
                 {% else %}
-                    <p class="no-contacts">Belum ada teman yang ditambahkan.</p>
+                <p class="no-contacts">Belum ada teman yang ditambahkan.</p>
                 {% endif %}
             </div>
         </div>
@@ -185,7 +182,8 @@
                     {% csrf_token %}
                     <div class="mb-3">
                         <label>Username / Email</label>
-                        <input type="text" name="search_user" class="form-control" placeholder="Misal: budi123" required>
+                        <input type="text" name="search_user" class="form-control" placeholder="Misal: budi123"
+                            required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Cari & Tambah Teman</button>
                 </form>
@@ -201,31 +199,41 @@
             </div>
 
             <div style="padding:20px; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                <form method="POST" action="{% url 'chat:create_group' %}" style="display: flex; flex-direction: column; height: 100%;">
+                <form method="POST" action="{% url 'chat:create_group' %}"
+                    style="display: flex; flex-direction: column; height: 100%;">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label class="form-label" style="font-weight: 600; color: #333;">Nama Grup</label>
-                        <input type="text" name="group_name" class="form-control" placeholder="Misal: Proyek PWL 🚀" required>
+                        <input type="text" name="group_name" class="form-control" placeholder="Misal: Proyek PWL 🚀"
+                            required>
                     </div>
-                    <label class="form-label" style="font-weight: 600; color: #333; margin-bottom: 5px;">Pilih Anggota</label>
-                    <div class="group-select-members" style="flex: 1; overflow-y: auto; margin-bottom: 15px; border: 1px solid #e9ecef; border-radius: 8px; background: #fdfdfd;">
+                    <label class="form-label" style="font-weight: 600; color: #333; margin-bottom: 5px;">Pilih
+                        Anggota</label>
+                    <div class="group-select-members"
+                        style="flex: 1; overflow-y: auto; margin-bottom: 15px; border: 1px solid #e9ecef; border-radius: 8px; background: #fdfdfd;">
                         {% if users %}
-                            {% for user in users %}
-                            <label class="wa-contact-item" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid #f1f1f1; margin: 0; padding: 10px 15px;">
-                                <div style="display: flex; align-items: center; min-width: 0;">
-                                    <div class="wa-avatar" style="margin-right: 12px;">
-                                        <img src="https://ui-avatars.com/api/?name={{ user.display_name }}&background=764ba2&color=fff" alt="{{ user.display_name }}" style="width: 38px; height: 38px; border-radius: 50%;">
-                                    </div>
-                                    <div style="min-width: 0;">
-                                        <h5 style="margin:0; font-size: 13px; font-weight: 600; color: #333;">{{ user.display_name }}</h5>
-                                    </div>
+                        {% for user in users %}
+                        <label class="wa-contact-item"
+                            style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid #f1f1f1; margin: 0; padding: 10px 15px;">
+                            <div style="display: flex; align-items: center; min-width: 0;">
+                                <div class="wa-avatar" style="margin-right: 12px;">
+                                    <img src="https://ui-avatars.com/api/?name={{ user.display_name }}&background=764ba2&color=fff"
+                                        alt="{{ user.display_name }}"
+                                        style="width: 38px; height: 38px; border-radius: 50%;">
                                 </div>
-                                <input type="checkbox" name="selected_users" value="{{ user.user.id }}" style="width: 18px; height: 18px; accent-color: #667eea; cursor: pointer;">
-                            </label>
-                            {% endfor %}
+                                <div style="min-width: 0;">
+                                    <h5 style="margin:0; font-size: 13px; font-weight: 600; color: #333;">{{
+                                        user.display_name }}</h5>
+                                </div>
+                            </div>
+                            <input type="checkbox" name="selected_users" value="{{ user.user.id }}"
+                                style="width: 18px; height: 18px; accent-color: #667eea; cursor: pointer;">
+                        </label>
+                        {% endfor %}
                         {% endif %}
                     </div>
-                    <button type="submit" class="btn btn-primary w-100" style="background: #667eea; border: none; padding: 10px; font-weight: 600;">Buat Grup</button>
+                    <button type="submit" class="btn btn-primary w-100"
+                        style="background: #667eea; border: none; padding: 10px; font-weight: 600;">Buat Grup</button>
                 </form>
             </div>
         </div>
@@ -244,16 +252,20 @@
             <div style="padding:20px; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <form id="form-add-member" style="display: flex; flex-direction: column; height: 100%;">
                     {% csrf_token %}
-                    <label class="form-label" style="font-weight: 600; color: #333; margin-bottom: 10px;">Pilih Teman untuk Ditambahkan</label>
-                    
-                    <div class="group-select-members" id="add-member-container" style="flex: 1; overflow-y: auto; margin-bottom: 15px; border: 1px solid #e9ecef; border-radius: 8px; background: #fdfdfd;">
+                    <label class="form-label" style="font-weight: 600; color: #333; margin-bottom: 10px;">Pilih Teman
+                        untuk Ditambahkan</label>
+
+                    <div class="group-select-members" id="add-member-container"
+                        style="flex: 1; overflow-y: auto; margin-bottom: 15px; border: 1px solid #e9ecef; border-radius: 8px; background: #fdfdfd;">
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100" style="background: #764ba2; border: none; padding: 10px; font-weight: 600;">Masukkan ke Grup</button>
+                    <button type="submit" class="btn btn-primary w-100"
+                        style="background: #764ba2; border: none; padding: 10px; font-weight: 600;">Masukkan ke
+                        Grup</button>
                 </form>
             </div>
         </div>
-        
+
     </div>
 
     <div class="chat-main">
@@ -266,91 +278,335 @@
 
 <style>
     /* CSS Sidebar & Panel */
-    .chat-sidebar { position: relative; overflow: hidden; display: flex; width: 350px; min-width: 350px; background: #fff; border-right: 1px solid #e9ecef; height: 100vh; }
-    .sidebar-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; background: #ffffff; transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 1; }
-    
-    #panel-main-chats { transform: translateX(0); }
-    #panel-new-chat, #panel-add-friend, #panel-create-group, #panel-add-member { transform: translateX(100%); }
-    
-    #panel-main-chats.inactive, #panel-new-chat.inactive { transform: translateX(-100%); }
-    #panel-new-chat.active, #panel-add-friend.active, #panel-create-group.active, #panel-add-member.active { transform: translateX(0); z-index: 10; }
-    
-    .new-chat-header { background: #667eea !important; color: white !important; display: flex; align-items: center; padding: 1.5rem 1rem !important; flex-direction: row !important; justify-content: flex-start !important; }
-    .btn-back { background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; margin-right: 1rem; padding: 0.2rem 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-    .btn-back:hover { background: rgba(255, 255, 255, 0.2); }
-    
-    .sidebar-header { display: flex; flex-direction: row; justify-content: space-between; align-items: center; padding: 15px 15px; border-bottom: 1px solid #e9ecef;}
-    .sidebar-header h3 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-    .sidebar-header .sidebar-actions { display: flex; gap: 8px; margin-top: 0; }
-    
-    .search-container-wa { padding: 10px 15px; background: #f0f2f5; }
-    .search-box-wa { display: flex; align-items: center; background: #fff; padding: 6px 12px; border-radius: 8px; gap: 10px; }
-    .search-box-wa input { border: none; outline: none; width: 100%; background: transparent; }
-    .wa-menu-options { display: flex; flex-direction: column; border-bottom: 1px solid #f0f2f5; }
-    .wa-menu-item { display: flex; align-items: center; padding: 12px 20px; text-decoration: none; color: #333; }
-    .wa-menu-item:hover { background: #f0f2f5; }
-    .wa-icon-circle { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-right: 15px; }
-    .group-color { background: #764ba2; }
-    .contact-color { background: #667eea; }
-    .contact-section-title { padding: 15px 20px 5px 20px; font-size: 0.85rem; color: #764ba2; font-weight: bold; text-transform: uppercase; }
-    
-    .chat-list, .wa-contact-list { flex: 1; overflow-y: auto; }
-    .chat-item-wrapper { display: flex; align-items: center; width: 100%; border-bottom: 1px solid #f7f7f7; }
-    .chat-item-wrapper:hover { background: #f0f2f5; }
-    .chat-item { display: flex; align-items: center; padding: 12px 15px 12px 20px; text-decoration: none; color: #333; flex: 1; min-width: 0; transition: background 0.2s; border: none !important; }
-    
-    .chat-item-dropdown { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 5; }
-    .chat-item-dropdown .btn { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-    .chat-item-dropdown .btn:hover { background: rgba(0,0,0,0.05); }
+    .chat-sidebar {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        width: 350px;
+        min-width: 350px;
+        background: #fff;
+        border-right: 1px solid #e9ecef;
+        height: 100vh;
+    }
 
-    .chat-avatar, .wa-avatar img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; margin-right: 15px; overflow: hidden; flex-shrink: 0; }
-    .chat-avatar img { width: 100%; height: 100%; }
-    .chat-info, .wa-contact-info { flex: 1; min-width: 0; padding-right: 15px; }
-    .chat-name, .wa-contact-info h5 { margin: 0; font-size: 14px; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .chat-preview, .wa-contact-info small { margin: 4px 0 0 0; font-size: 12px; color: #777; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    
-    .chat-container { display: flex; height: 100vh; overflow: hidden; }
-    .chat-main { flex: 1; background: #f8f9fa; display: flex; align-items: center; justify-content: center; }
-    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #adb5bd; }
-    .empty-state i { font-size: 4rem; margin-bottom: 1rem; }
-    .no-chats, .no-contacts { text-align: center; padding: 20px; color: #999; }
+    .sidebar-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        z-index: 1;
+    }
+
+    #panel-main-chats {
+        transform: translateX(0);
+    }
+
+    #panel-new-chat,
+    #panel-add-friend,
+    #panel-create-group,
+    #panel-add-member {
+        transform: translateX(100%);
+    }
+
+    #panel-main-chats.inactive,
+    #panel-new-chat.inactive {
+        transform: translateX(-100%);
+    }
+
+    #panel-new-chat.active,
+    #panel-add-friend.active,
+    #panel-create-group.active,
+    #panel-add-member.active {
+        transform: translateX(0);
+        z-index: 10;
+    }
+
+    .new-chat-header {
+        background: #667eea !important;
+        color: white !important;
+        display: flex;
+        align-items: center;
+        padding: 1.5rem 1rem !important;
+        flex-direction: row !important;
+        justify-content: flex-start !important;
+    }
+
+    .btn-back {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.25rem;
+        cursor: pointer;
+        margin-right: 1rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-back:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .sidebar-header {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 15px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .sidebar-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .sidebar-header .sidebar-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 0;
+    }
+
+    .search-container-wa {
+        padding: 10px 15px;
+        background: #f0f2f5;
+    }
+
+    .search-box-wa {
+        display: flex;
+        align-items: center;
+        background: #fff;
+        padding: 6px 12px;
+        border-radius: 8px;
+        gap: 10px;
+    }
+
+    .search-box-wa input {
+        border: none;
+        outline: none;
+        width: 100%;
+        background: transparent;
+    }
+
+    .wa-menu-options {
+        display: flex;
+        flex-direction: column;
+        border-bottom: 1px solid #f0f2f5;
+    }
+
+    .wa-menu-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        text-decoration: none;
+        color: #333;
+    }
+
+    .wa-menu-item:hover {
+        background: #f0f2f5;
+    }
+
+    .wa-icon-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-right: 15px;
+    }
+
+    .group-color {
+        background: #764ba2;
+    }
+
+    .contact-color {
+        background: #667eea;
+    }
+
+    .contact-section-title {
+        padding: 15px 20px 5px 20px;
+        font-size: 0.85rem;
+        color: #764ba2;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .chat-list,
+    .wa-contact-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .chat-item-wrapper {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        border-bottom: 1px solid #f7f7f7;
+    }
+
+    .chat-item-wrapper:hover {
+        background: #f0f2f5;
+    }
+
+    .chat-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px 12px 20px;
+        text-decoration: none;
+        color: #333;
+        flex: 1;
+        min-width: 0;
+        transition: background 0.2s;
+        border: none !important;
+    }
+
+    .chat-item-dropdown {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 5;
+    }
+
+    .chat-item-dropdown .btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+
+    .chat-item-dropdown .btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    .chat-avatar,
+    .wa-avatar img {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 15px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .chat-avatar img {
+        width: 100%;
+        height: 100%;
+    }
+
+    .chat-info,
+    .wa-contact-info {
+        flex: 1;
+        min-width: 0;
+        padding-right: 15px;
+    }
+
+    .chat-name,
+    .wa-contact-info h5 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .chat-preview,
+    .wa-contact-info small {
+        margin: 4px 0 0 0;
+        font-size: 12px;
+        color: #777;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .chat-container {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .chat-main {
+        flex: 1;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #adb5bd;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .no-chats,
+    .no-contacts {
+        text-align: center;
+        padding: 20px;
+        color: #999;
+    }
 </style>
 
 <script>
-let activeAddMemberConversationId = null;
+    let activeAddMemberConversationId = null;
 
-// Fungsi AJAX untuk memuat user dan menampilkan panel Tambah Anggota (Sliding)
-function openAddMemberPanel(event, conversationId, conversationName) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    activeAddMemberConversationId = conversationId;
-    document.getElementById("add-member-group-name").innerText = "Grup: " + conversationName;
-    
-    const container = document.getElementById("add-member-container");
-    container.innerHTML = '<p class="text-center p-3 text-muted">Memuat kontak...</p>';
-    
-    // Geser panel utama ke kiri, dan aktifkan panel tambah anggota
-    document.getElementById("panel-main-chats").classList.add("inactive");
-    document.getElementById("panel-add-member").classList.add("active");
+    // Fungsi AJAX untuk memuat user dan menampilkan panel Tambah Anggota (Sliding)
+    function openAddMemberPanel(event, conversationId, conversationName) {
+        event.preventDefault();
+        event.stopPropagation();
 
-    // --- DIUBAH: Menggunakan Django URL Template Tag (Reverse Dinamis) ---
-    const urlTemplate = "{% url 'chat:add_member_ajax' 0 %}";
-    const finalUrl = urlTemplate.replace('0', conversationId);
+        activeAddMemberConversationId = conversationId;
+        document.getElementById("add-member-group-name").innerText = "Grup: " + conversationName;
 
-    // Tembak API internal Django untuk ambil data user yang tersedia
-    fetch(finalUrl)
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        container.innerHTML = "";
-        if (data.status === 'success' && data.users.length > 0) {
-            data.users.forEach(user => {
-                const row = `
+        const container = document.getElementById("add-member-container");
+        container.innerHTML = '<p class="text-center p-3 text-muted">Memuat kontak...</p>';
+
+        // Geser panel utama ke kiri, dan aktifkan panel tambah anggota
+        document.getElementById("panel-main-chats").classList.add("inactive");
+        document.getElementById("panel-add-member").classList.add("active");
+
+        // --- DIUBAH: Menggunakan Django URL Template Tag (Reverse Dinamis) ---
+        const urlTemplate = "{% url 'chat:add_member_ajax' 0 %}";
+        const finalUrl = urlTemplate.replace('0', conversationId);
+
+        // Tembak API internal Django untuk ambil data user yang tersedia
+        fetch(finalUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                container.innerHTML = "";
+                if (data.status === 'success' && data.users.length > 0) {
+                    data.users.forEach(user => {
+                        const row = `
                     <label class="wa-contact-item" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid #f1f1f1; margin: 0; padding: 10px 15px;">
                         <div style="display: flex; align-items: center; min-width: 0;">
                             <div class="wa-avatar" style="margin-right: 12px;">
@@ -363,89 +619,89 @@ function openAddMemberPanel(event, conversationId, conversationName) {
                         <input type="checkbox" name="selected_users" value="${user.id}" style="width: 18px; height: 18px; accent-color: #667eea; cursor: pointer;">
                     </label>
                 `;
-                container.insertAdjacentHTML('beforeend', row);
+                        container.insertAdjacentHTML('beforeend', row);
+                    });
+                } else {
+                    container.innerHTML = '<p class="text-center p-3 text-muted" style="font-size:13px;">Semua teman Anda sudah berada di grup ini.</p>';
+                }
+            })
+            .catch(err => {
+                console.error("Gagal mengambil kontak:", err);
+                container.innerHTML = '<p class="text-center p-3 text-danger">Gagal memuat data kontak.</p>';
             });
-        } else {
-            container.innerHTML = '<p class="text-center p-3 text-muted" style="font-size:13px;">Semua teman Anda sudah berada di grup ini.</p>';
-        }
-    })
-    .catch(err => {
-        console.error("Gagal mengambil kontak:", err);
-        container.innerHTML = '<p class="text-center p-3 text-danger">Gagal memuat data kontak.</p>';
-    });
-}
-
-// Fungsi konfirmasi bawaan lama
-function confirmAction(event, message, targetUrl) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (confirm(message)) {
-        if(targetUrl !== '#') window.location.href = targetUrl;
     }
-}
 
-document.addEventListener("DOMContentLoaded", function() {
-    const panelMain = document.getElementById("panel-main-chats");
-    const panelNew = document.getElementById("panel-new-chat");
-    const panelAdd = document.getElementById("panel-add-friend");
-    const panelGroup = document.getElementById("panel-create-group");
-    const panelAddMember = document.getElementById("panel-add-member");
-
-    // Tutup Panel Tambah Anggota (Kembali ke Utama)
-    document.getElementById("btn-close-add-member")?.addEventListener("click", function() {
-        panelMain.remove("inactive");
-        panelAddMember.classList.remove("active");
-        document.getElementById("form-add-member").reset();
-    });
-
-    // Proses Submit Tambah Anggota via AJAX
-    document.getElementById("form-add-member")?.addEventListener("submit", function(e) {
-        e.preventDefault();
-        const checkboxes = document.querySelectorAll('#add-member-container input[name="selected_users"]:checked');
-        const selectedUsers = Array.from(checkboxes).map(cb => cb.value);
-
-        if(selectedUsers.length === 0) {
-            alert("Silakan pilih minimal satu teman terlebih dahulu!");
-            return;
+    // Fungsi konfirmasi bawaan lama
+    function confirmAction(event, message, targetUrl) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (confirm(message)) {
+            if (targetUrl !== '#') window.location.href = targetUrl;
         }
+    }
 
-        // --- DIUBAH: Menggunakan Django URL Template Tag (Reverse Dinamis untuk POST) ---
-        const submitUrlTemplate = "{% url 'chat:add_member_ajax' 0 %}";
-        const finalSubmitUrl = submitUrlTemplate.replace('0', activeAddMemberConversationId);
+    document.addEventListener("DOMContentLoaded", function () {
+        const panelMain = document.getElementById("panel-main-chats");
+        const panelNew = document.getElementById("panel-new-chat");
+        const panelAdd = document.getElementById("panel-add-friend");
+        const panelGroup = document.getElementById("panel-create-group");
+        const panelAddMember = document.getElementById("panel-add-member");
 
-        fetch(finalSubmitUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({ selected_users: selectedUsers })
-        })
-        .then(res => {
-            if (!res.ok) throw new Error("Terjadi masalah pada server.");
-            return res.json();
-        })
-        .then(data => {
-            if(data.status === 'success') {
-                alert(data.message);
-                window.location.reload();
-            } else {
-                alert("Gagal: " + data.message);
-            }
-        })
-        .catch(err => {
-            console.error("Gagal menambahkan anggota:", err);
-            alert("Gagal memproses pengiriman data ke server.");
+        // Tutup Panel Tambah Anggota (Kembali ke Utama)
+        document.getElementById("btn-close-add-member")?.addEventListener("click", function () {
+            panelMain.remove("inactive");
+            panelAddMember.classList.remove("active");
+            document.getElementById("form-add-member").reset();
         });
-    });
 
-    // Navigasi Standar bawaan kode lama kamu
-    document.getElementById("btn-open-new-chat")?.addEventListener("click", function() { panelMain.classList.add("inactive"); panelNew.classList.add("active"); });
-    document.getElementById("btn-close-new-chat")?.addEventListener("click", function() { panelMain.classList.remove("inactive"); panelNew.classList.remove("active"); });
-    document.getElementById("btn-open-add-friend")?.addEventListener("click", function(e) { e.preventDefault(); panelNew.classList.add("inactive"); panelAdd.classList.add("active"); });
-    document.getElementById("btn-close-add-friend")?.addEventListener("click", function() { panelNew.classList.remove("inactive"); panelAdd.classList.remove("active"); });
-    document.getElementById("btn-open-create-group")?.addEventListener("click", function(e) { e.preventDefault(); panelNew.classList.add("inactive"); panelGroup.classList.add("active"); });
-    document.getElementById("btn-close-create-group")?.addEventListener("click", function() { panelNew.classList.remove("inactive"); panelGroup.classList.remove("active"); const form = panelGroup.querySelector("form"); if(form) form.reset(); });
-});
+        // Proses Submit Tambah Anggota via AJAX
+        document.getElementById("form-add-member")?.addEventListener("submit", function (e) {
+            e.preventDefault();
+            const checkboxes = document.querySelectorAll('#add-member-container input[name="selected_users"]:checked');
+            const selectedUsers = Array.from(checkboxes).map(cb => cb.value);
+
+            if (selectedUsers.length === 0) {
+                alert("Silakan pilih minimal satu teman terlebih dahulu!");
+                return;
+            }
+
+            // --- DIUBAH: Menggunakan Django URL Template Tag (Reverse Dinamis untuk POST) ---
+            const submitUrlTemplate = "{% url 'chat:add_member_ajax' 0 %}";
+            const finalSubmitUrl = submitUrlTemplate.replace('0', activeAddMemberConversationId);
+
+            fetch(finalSubmitUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ selected_users: selectedUsers })
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error("Terjadi masalah pada server.");
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);
+                        window.location.reload();
+                    } else {
+                        alert("Gagal: " + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error("Gagal menambahkan anggota:", err);
+                    alert("Gagal memproses pengiriman data ke server.");
+                });
+        });
+
+        // Navigasi Standar bawaan kode lama kamu
+        document.getElementById("btn-open-new-chat")?.addEventListener("click", function () { panelMain.classList.add("inactive"); panelNew.classList.add("active"); });
+        document.getElementById("btn-close-new-chat")?.addEventListener("click", function () { panelMain.classList.remove("inactive"); panelNew.classList.remove("active"); });
+        document.getElementById("btn-open-add-friend")?.addEventListener("click", function (e) { e.preventDefault(); panelNew.classList.add("inactive"); panelAdd.classList.add("active"); });
+        document.getElementById("btn-close-add-friend")?.addEventListener("click", function () { panelNew.classList.remove("inactive"); panelAdd.classList.remove("active"); });
+        document.getElementById("btn-open-create-group")?.addEventListener("click", function (e) { e.preventDefault(); panelNew.classList.add("inactive"); panelGroup.classList.add("active"); });
+        document.getElementById("btn-close-create-group")?.addEventListener("click", function () { panelNew.classList.remove("inactive"); panelGroup.classList.remove("active"); const form = panelGroup.querySelector("form"); if (form) form.reset(); });
+    });
 </script>
 {% endblock %}
