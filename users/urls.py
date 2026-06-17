@@ -10,4 +10,5 @@ urlpatterns = [
     path('profile/<str:username>/', views.user_profile, name='user_profile'),
     path('edit-profile/', views.edit_profile, name='edit_profile'),
     path('search-users/', views.search_users, name='search_users'),
+    path('delete-account/', views.delete_user, name='delete_user'),
 ]

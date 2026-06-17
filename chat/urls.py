@@ -21,4 +21,5 @@ urlpatterns = [
     path('api/messages/<str:conversation_id>/', views.get_messages, name='get_messages'),
     path('api/send-message/', views.send_message, name='send_message'),
     path('api/delete-message/<str:message_id>/', views.delete_message, name='delete_message'),
+    path('conversation/delete/<str:pk>/', views.delete_conversation, name='delete_conversation'),
 ]

@@ -634,3 +634,33 @@ def add_member_ajax(request, conversation_id):
         
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f"Database Error: {str(e)}"}, status=500)
+
+
+@firebase_login_required
+def delete_conversation(request, pk):
+    my_uid = request.session.get('firebase_user_uid')
+    try:
+        conv_ref = db.collection('conversations').document(pk)
+        conv_doc = conv_ref.get()
+        if not conv_doc.exists:
+            messages.error(request, "Percakapan tidak ditemukan.")
+            return redirect('chat:chat_list')
+        
+        conv_data = conv_doc.to_dict()
+        if my_uid not in conv_data.get('participants', []):
+            messages.error(request, "Anda tidak memiliki akses untuk menghapus percakapan ini.")
+            return redirect('chat:chat_list')
+        
+        # Hapus semua pesan yang terasosiasi dengan conversation ini
+        messages_ref = db.collection('messages').where('conversation_id', '==', pk).stream()
+        for doc in messages_ref:
+            db.collection('messages').document(doc.id).delete()
+            
+        # Hapus percakapan itu sendiri
+        conv_ref.delete()
+        
+        messages.success(request, "Percakapan berhasil dihapus.")
+    except Exception as e:
+        messages.error(request, f"Gagal menghapus percakapan: {str(e)}")
+        
+    return redirect('chat:chat_list')

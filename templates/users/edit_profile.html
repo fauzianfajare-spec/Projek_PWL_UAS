@@ -8,6 +8,12 @@
     <div class="form-card">
         <h2>Edit Profil</h2>
         
+        {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
+        
         <form method="POST" enctype="multipart/form-data" class="edit-profile-form">
             {% csrf_token %}
             
@@ -46,11 +52,24 @@
                 <textarea id="bio" name="bio" class="form-control" rows="4">{{ profile.bio }}</textarea>
             </div>
             
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                <a href="{% url 'users:user_profile' request.session.username %}" class="btn btn-secondary">Batal</a>
+            <div class="form-actions d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
+                <div>
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    <a href="{% url 'users:user_profile' request.session.username %}" class="btn btn-secondary">Batal</a>
+                </div>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteAccount()">
+                    <i class="fas fa-trash-alt me-2"></i>Hapus Akun
+                </button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+function confirmDeleteAccount() {
+    if (confirm("Apakah Anda yakin ingin menghapus akun Anda secara permanen? Tindakan ini tidak dapat dibatalkan.")) {
+        window.location.href = "{% url 'users:delete_user' %}";
+    }
+}
+</script>
 {% endblock %}

@@ -215,3 +215,26 @@ def search_users(request):
             print(f"Error saat mencari user di Firestore: {e}")
 
     return render(request, 'users/search.html', {'results': results, 'query': query})
+
+
+@firebase_login_required
+def delete_user(request):
+    my_uid = request.session.get('firebase_user_uid')
+    try:
+        # Hapus dokumen pengguna dari Firestore
+        db.collection('users').document(my_uid).delete()
+        
+        # Hapus user dari Firebase Authentication
+        auth.delete_user(my_uid)
+        
+        # Bersihkan session Django
+        request.session.flush()
+        return redirect('users:register')
+    except Exception as e:
+        doc_ref = db.collection('users').document(my_uid)
+        doc = doc_ref.get()
+        profile_data = doc.to_dict() if doc.exists else {}
+        return render(request, 'users/edit_profile.html', {
+            'profile': profile_data,
+            'error': f'Gagal menghapus akun: {str(e)}'
+        })

@@ -82,6 +82,13 @@
                                                 <i class="fas fa-user-plus fa-fw me-2"></i>Tambah Anggota
                                             </a>
                                         </li>
+                                        {% if conversation.created_by == request.session.firebase_user_uid %}
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#" onclick="confirmAction(event, 'Apakah Anda yakin ingin menghapus grup ini untuk semua orang?', '{% url 'chat:delete_conversation' conversation.id %}')">
+                                                <i class="fas fa-trash fa-fw me-2"></i>Hapus Grup
+                                            </a>
+                                        </li>
+                                        {% endif %}
                                     {% else %}
                                         <li>
                                             <a class="dropdown-item text-warning" href="#" onclick="confirmAction(event, 'Apakah Anda yakin ingin memblokir user ini?', '#')">
@@ -89,8 +96,8 @@
                                             </a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item text-danger" href="#" onclick="confirmAction(event, 'Apakah Anda yakin ingin menghapus user/chat ini?', '#')">
-                                                <i class="fas fa-user-times fa-fw me-2"></i>Hapus User
+                                            <a class="dropdown-item text-danger" href="#" onclick="confirmAction(event, 'Apakah Anda yakin ingin menghapus chat ini?', '{% url 'chat:delete_conversation' conversation.id %}')">
+                                                <i class="fas fa-trash fa-fw me-2"></i>Hapus Chat
                                             </a>
                                         </li>
                                     {% endif %}
