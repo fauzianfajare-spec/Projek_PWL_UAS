@@ -4,12 +4,14 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST, require_http_methods
 from django.utils import timezone
 import json
+import re
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 import os
 import traceback
 from django.contrib import messages
 from django.conf import settings
+
 
 
 # ========================================================
@@ -540,14 +542,6 @@ def send_message(request):
         conv_doc = db.collection('conversations').document(conversation_id).get()
         if not conv_doc.exists:
             return JsonResponse({'status': 'error', 'message': 'Percakapan tidak ditemukan.'}, status=404)
-
-        conv_data = conv_doc.to_dict()
-        if conv_data.get('conversation_type') == 'group':
-            if my_uid not in conv_data.get('participants', []):
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Akses ditolak. Anda sudah bukan bagian dari grup ini.'
-                }, status=403)
         
         db.collection('messages').add({
             'conversation_id': conversation_id,

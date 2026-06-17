@@ -128,8 +128,6 @@
         </div>
 
         <div class="chat-input-area">
-            {% if conversation.conversation_type == 'group' %}
-            {% if request.user in conversation.participants.all %}
             <form id="messageForm" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="conversation_id" value="{{ conversation.id }}">
@@ -145,30 +143,6 @@
                     <button type="submit" class="btn-send"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </form>
-            {% else %}
-            <div class="alert alert-secondary text-center m-0" role="alert"
-                style="background-color: #f0f2f5; border: none; color: #667781; padding: 10px;">
-                <i class="fas fa-ban me-2"></i> Anda tidak dapat mengirim pesan ke grup ini karena Anda bukan lagi
-                peserta.
-            </div>
-            {% endif %}
-            {% else %}
-            <form id="messageForm" enctype="multipart/form-data">
-                {% csrf_token %}
-                <input type="hidden" name="conversation_id" value="{{ conversation.id }}">
-                <div class="input-wrapper">
-                    <input type="file" id="imageInput" class="hidden-input" accept="image/*">
-                    <input type="file" id="fileInput" class="hidden-input">
-
-                    <button type="button" class="btn-attach" id="attachImage"><i class="fas fa-image"></i></button>
-                    <button type="button" class="btn-attach" id="attachFile"><i class="fas fa-paperclip"></i></button>
-
-                    <textarea id="messageText" name="text" class="message-input" placeholder="Ketik pesan..."
-                        rows="1"></textarea>
-                    <button type="submit" class="btn-send"><i class="fas fa-paper-plane"></i></button>
-                </div>
-            </form>
-            {% endif %}
         </div>
     </div>
 </div>
