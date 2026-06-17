@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chat Baru - OWI Chat{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <h2>Mulai Percakapan Baru</h2>
+        
+        <form method="POST" class="user-select-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="recipient">Pilih Pengguna</label>
+                <select id="recipient" name="recipient_id" class="form-control" required>
+                    <option value="">-- Pilih Pengguna --</option>
+                    {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }} (@{{ user.username }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Mulai Chat</button>
+        </form>
+        
+        <div class="users-grid">
+            <h3>Pengguna Tersedia</h3>
+            {% if users %}
+                {% for user in users %}
+                    <div class="user-card">
+                        <img src="{{ user.profile.get_avatar_url }}" alt="{{ user.username }}" class="user-avatar">
+                        <h4>{{ user.get_full_name|default:user.username }}</h4>
+                        <p>@{{ user.username }}</p>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="recipient_id" value="{{ user.id }}">
+                            <button type="submit" class="btn btn-sm btn-primary">Chat</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>Tidak ada pengguna lain yang tersedia</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

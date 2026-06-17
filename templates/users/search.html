@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cari Pengguna - OWI Chat{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <div class="search-card">
+        <h2>Cari Pengguna</h2>
+        
+        <form method="GET" class="search-form">
+            <div class="form-group">
+                <input type="text" name="q" class="form-control" placeholder="Cari username..." value="{{ query }}">
+                <button type="submit" class="btn btn-primary">Cari</button>
+            </div>
+        </form>
+        
+        {% if results %}
+            <div class="results-list">
+                {% for user in results %}
+                    <div class="result-item">
+                        <img src="{{ user.profile.get_avatar_url }}" alt="{{ user.username }}" class="result-avatar">
+                        <div class="result-info">
+                            <h4>{{ user.get_full_name|default:user.username }}</h4>
+                            <p>@{{ user.username }}</p>
+                        </div>
+                        <form method="POST" action="{% url 'chat:start_conversation' %}" class="result-action">
+                            {% csrf_token %}
+                            <input type="hidden" name="recipient_id" value="{{ user.id }}">
+                            <button type="submit" class="btn btn-sm btn-primary">Chat</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        {% elif query %}
+            <p class="no-results">Tidak ada pengguna ditemukan untuk "{{ query }}"</p>
+        {% else %}
+            <p class="help-text">Masukkan username untuk mencari pengguna</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

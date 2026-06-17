@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - OWI Chat{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>Login ke OWI Chat</h2>
+        
+        {% if success %}
+        <div style="color: green; background-color: #e6ffe6; padding: 10px; border: 1px solid green; border-radius: 5px; margin-bottom: 15px;">
+            {{ success }}
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div style="color: red; background-color: #ffe6e6; padding: 10px; border: 1px solid red; border-radius: 5px; margin-bottom: 15px;">
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        <form method="POST" action="{% url 'users:login' %}" class="auth-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="Masukkan email terdaftar" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Masukkan password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        
+        <p class="auth-link">
+            Belum punya akun? <a href="{% url 'users:register' %}">Daftar di sini</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

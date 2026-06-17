@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user_username }} - OWI Chat{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-card">
+        <div class="profile-header">
+            <img src="{{ profile.avatar|default:'/static/images/default-avatar.png' }}" alt="{{ profile_user_username }}" class="profile-avatar">
+            
+            <div class="profile-info">
+                <h2>{{ profile_user_username }}</h2>
+                <p class="username">@{{ profile_user_username }}</p>
+                
+                {% if profile.bio %}
+                    <p class="bio">{{ profile.bio }}</p>
+                {% endif %}
+                
+                {% if profile.phone %}
+                    <p class="phone"><i class="fas fa-phone"></i> {{ profile.phone }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if request.session.firebase_user_uid == profile_uid %}
+            <div class="profile-actions">
+                <a href="{% url 'users:edit_profile' %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </a>
+            </div>
+        {% else %}
+            <div class="profile-actions">
+                <a href="{% url 'chat:start_conversation' profile_uid %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Mulai Chat
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

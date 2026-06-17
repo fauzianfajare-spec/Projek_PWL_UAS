@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Profile - OWI Chat{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <h2>Edit Profil</h2>
+        
+        <form method="POST" enctype="multipart/form-data" class="edit-profile-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="avatar">Avatar</label>
+                {% if profile.avatar %}
+                    <div class="avatar-preview">
+                        <img src="{{ profile.avatar.url }}" alt="Avatar">
+                    </div>
+                {% endif %}
+                <input type="file" id="avatar" name="avatar" class="form-control" accept="image/*">
+            </div>
+            
+            <div class="form-group">
+                <label for="first_name">Nama Depan</label>
+                <input type="text" id="first_name" name="first_name" class="form-control" value="{{ profile.first_name }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="last_name">Nama Belakang</label>
+                <input type="text" id="last_name" name="last_name" class="form-control" value="{{ profile.last_name }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-control" value="{{ profile.email }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Nomor Telepon</label>
+                <input type="tel" id="phone" name="phone" class="form-control" value="{{ profile.phone }}">
+            </div>
+            
+            <div class="form-group">
+                <label for="bio">Bio</label>
+                <textarea id="bio" name="bio" class="form-control" rows="4">{{ profile.bio }}</textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                <a href="{% url 'users:user_profile' request.session.username %}" class="btn btn-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
