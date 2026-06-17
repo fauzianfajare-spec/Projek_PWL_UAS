@@ -9,6 +9,7 @@ from firebase_admin import credentials, firestore, auth
 import os
 import traceback
 from django.contrib import messages
+from google import genai
 
 # ========================================================
 # 1. KONFIGURASI KONEKSI FIREBASE (Berjalan 1 Kali)
@@ -21,6 +22,53 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
+
+def muat_kata_kasar():
+    """Fungsi dinamis untuk membaca file kata_kasar.txt dan kata_kasar.json"""
+    kata_terlarang = set()
+
+    # 1. Baca dari file .txt
+    path_txt = os.path.join(settings.BASE_DIR, 'chat', 'kata_kasar.txt')
+    if os.path.exists(path_txt):
+        with open(path_txt, 'r', encoding='utf-8') as f:
+            for baris in f:
+                kata = baris.strip().lower()
+                if kata:
+                    kata_terlarang.add(kata)
+
+    # 2. Baca dari file .json
+    path_json = os.path.join(settings.BASE_DIR, 'chat', 'kata_kasar.json')
+    if os.path.exists(path_json):
+        try:
+            with open(path_json, 'r', encoding='utf-8') as f:
+                data_json = json.load(f)
+                if isinstance(data_json, list):
+                    for item in data_json:
+                        kata = str(item).strip().lower()
+                        if kata:
+                            kata_terlarang.add(kata)
+        except Exception as e:
+            print(f"Error membaca file JSON kata kasar: {e}")
+                    
+    daftar_kata = list(kata_terlarang)
+    daftar_kata.sort(key=len, reverse=True)
+    return daftar_kata
+
+def filter_kata_kasar(teks_input):
+    """Fungsi untuk menyensor kata berdasarkan gabungan .txt dan .json"""
+    if not teks_input:
+        return teks_input
+        
+    daftar_kata = muat_kata_kasar()
+    if not daftar_kata:
+        return teks_input
+        
+    teks_hasil = teks_input
+    for kata in daftar_kata:
+        pola = re.compile(r'\b' + re.escape(kata) + r'\b', re.IGNORECASE)
+        teks_hasil = pola.sub("*" * len(kata), teks_hasil)
+        
+    return teks_hasil
 
 # ========================================================
 # 2. HELPER CLASSES FOR FIREBASE DATA EMULATION IN TEMPLATES
