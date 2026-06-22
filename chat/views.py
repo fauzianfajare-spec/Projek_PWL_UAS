@@ -11,6 +11,8 @@ import os
 import traceback
 from django.contrib import messages
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+
 
 
 
@@ -72,6 +74,63 @@ def filter_kata_kasar(teks_input):
         teks_hasil = pola.sub("*" * len(kata), teks_hasil)
         
     return teks_hasil
+
+
+def get_file_metadata(file_url):
+    """Fungsi helper untuk mendapatkan metadata file (nama, ekstensi, ikon, warna)"""
+    if not file_url:
+        return {}
+    
+    # Ambil nama file dari URL
+    base_name = os.path.basename(file_url)
+    if '_' in base_name:
+        parts = base_name.split('_', 1)
+        filename = parts[1]
+    else:
+        filename = base_name
+        
+    ext = filename.split('.')[-1].lower() if '.' in filename else ''
+    
+    # Map ekstensi file ke icon FontAwesome dan warna background
+    ext_map = {
+        'pdf': ('fa-file-pdf', '#e53935'),
+        'doc': ('fa-file-word', '#1e88e5'),
+        'docx': ('fa-file-word', '#1e88e5'),
+        'xls': ('fa-file-excel', '#43a047'),
+        'xlsx': ('fa-file-excel', '#43a047'),
+        'ppt': ('fa-file-powerpoint', '#f4511e'),
+        'pptx': ('fa-file-powerpoint', '#f4511e'),
+        'zip': ('fa-file-archive', '#fdd835'),
+        'rar': ('fa-file-archive', '#fdd835'),
+        '7z': ('fa-file-archive', '#fdd835'),
+        'tar': ('fa-file-archive', '#fdd835'),
+        'gz': ('fa-file-archive', '#fdd835'),
+        'png': ('fa-file-image', '#00acc1'),
+        'jpg': ('fa-file-image', '#00acc1'),
+        'jpeg': ('fa-file-image', '#00acc1'),
+        'gif': ('fa-file-image', '#00acc1'),
+        'svg': ('fa-file-image', '#00acc1'),
+        'webp': ('fa-file-image', '#00acc1'),
+        'mp3': ('fa-file-audio', '#8e24aa'),
+        'wav': ('fa-file-audio', '#8e24aa'),
+        'ogg': ('fa-file-audio', '#8e24aa'),
+        'm4a': ('fa-file-audio', '#8e24aa'),
+        'mp4': ('fa-file-video', '#3949ab'),
+        'mkv': ('fa-file-video', '#3949ab'),
+        'avi': ('fa-file-video', '#3949ab'),
+        'mov': ('fa-file-video', '#3949ab'),
+        'webm': ('fa-file-video', '#3949ab'),
+    }
+    
+    icon_class, icon_color = ext_map.get(ext, ('fa-file-alt', '#90a4ae'))
+    
+    return {
+        'filename': filename,
+        'ext': ext.upper(),
+        'icon_class': icon_class,
+        'icon_color': icon_color
+    }
+
 
 # ========================================================
 # 2. HELPER CLASSES FOR FIREBASE DATA EMULATION IN TEMPLATES
@@ -390,6 +449,8 @@ def conversation_detail(request, pk):
                 
                 data['list_reaksi_bersih'] = list_reaksi_bersih
                 data['text'] = filter_kata_kasar(data.get('text', ''))
+                if data.get('file'):
+                    data['file_metadata'] = get_file_metadata(data['file'])
                 chat_messages.append(data)
                 
             chat_messages.sort(key=lambda msg: msg.get('created_at', {}).get('seconds', 0))
@@ -518,6 +579,8 @@ def get_messages(request, conversation_id):
                     'seconds': int(timezone.now().timestamp()),
                     'nanoseconds': 0
                 }
+            if data.get('file'):
+                data['file_metadata'] = get_file_metadata(data['file'])
             chat_messages.append(data)
             
         chat_messages.sort(key=lambda msg: msg.get('created_at', {}).get('seconds', 0))
@@ -537,6 +600,20 @@ def send_message(request):
     
     image_url = None
     file_url = None 
+    
+    if 'image' in request.FILES:
+        image_file = request.FILES['image']
+        fs = FileSystemStorage()
+        # Save file locally under media/chat_images/
+        filename = fs.save(f"chat_images/{conversation_id}_{image_file.name}", image_file)
+        image_url = fs.url(filename)
+        
+    if 'file' in request.FILES:
+        uploaded_file = request.FILES['file']
+        fs = FileSystemStorage()
+        # Save file locally under media/chat_files/
+        filename = fs.save(f"chat_files/{conversation_id}_{uploaded_file.name}", uploaded_file)
+        file_url = fs.url(filename)
     
     try:
         conv_doc = db.collection('conversations').document(conversation_id).get()

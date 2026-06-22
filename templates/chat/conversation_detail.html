@@ -24,14 +24,22 @@
             <a href="{% url 'chat:conversation_detail' conv.id %}"
                 class="chat-item {% if conv.id == conversation.id %}active{% endif %}"
                 style="text-decoration: none; color: inherit; display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0;">
-                <div class="chat-list-avatar"
-                    style="width: 40px; height: 40px; background: #637cf2; color: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; margin-right: 12px; flex-shrink: 0;">
+                <div class="chat-list-avatar" style="margin-right: 12px; flex-shrink: 0;">
                     {% if conv.conversation_type == 'group' %}
-                    {{ conv.name|slice:":2"|upper }}
+                    <div
+                        style="width: 40px; height: 40px; background: #637cf2; color: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">
+                        {{ conv.name|slice:":2"|upper }}
+                    </div>
                     {% else %}
                     {% for participant in conv.participants.all %}
                     {% if participant.username != my_username %}
-                    {{ participant.username|slice:":2"|upper }}
+                    {% if participant.profile.avatar %}
+                    <img src="{{ participant.profile.avatar.url }}" alt="{{ participant.username }}"
+                        style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                    <img src="https://ui-avatars.com/api/?name={{ participant.username }}&background=667eea&color=fff"
+                        alt="{{ participant.username }}" style="width: 40px; height: 40px; border-radius: 50%;">
+                    {% endif %}
                     {% endif %}
                     {% endfor %}
                     {% endif %}
@@ -64,6 +72,21 @@
 
     <div class="chat-main">
         <div class="chat-header">
+            <div class="header-avatar" style="margin-right: 15px;">
+                {% if conversation.conversation_type != 'group' %}
+                {% for participant in conversation.participants.all %}
+                {% if participant.username != my_username %}
+                {% if participant.profile.avatar %}
+                <img src="{{ participant.profile.avatar.url }}" alt="{{ participant.username }}"
+                    style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                {% else %}
+                <img src="https://ui-avatars.com/api/?name={{ participant.username }}&background=667eea&color=fff"
+                    alt="{{ participant.username }}" style="width: 40px; height: 40px; border-radius: 50%;">
+                {% endif %}
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+            </div>
             <div class="header-info">
                 <h2>
                     {% if conversation.conversation_type == 'group' %}
@@ -76,19 +99,11 @@
                     {% endfor %}
                     {% endif %}
                 </h2>
+                {% if conversation.conversation_type == 'group' %}
                 <p>
-                    {% if conversation.conversation_type == 'group' %}
                     {{ conversation.participants.count }} participants
-                    {% else %}
-                    {% for participant in conversation.participants.all %}
-                    {% if participant.username != my_username %}
-                    <span class="status {% if participant.profile.is_online %}online{% else %}offline{% endif %}">
-                        {% if participant.profile.is_online %}Online{% else %}Offline{% endif %}
-                    </span>
-                    {% endif %}
-                    {% endfor %}
-                    {% endif %}
                 </p>
+                {% endif %}
             </div>
         </div>
 
@@ -102,7 +117,8 @@
                 </div>
                 {% endif %}
 
-                <div class="message-content">
+                <div
+                    class="message-content {% if message.image %}message-image-content{% endif %} {% if message.text %}has-text{% endif %} {% if message.file %}has-file{% endif %}">
                     {% if message.sender != my_username %}
                     <p class="message-sender">{{ message.sender }}</p>
                     {% endif %}
@@ -111,11 +127,24 @@
                     <img src="{{ message.image }}" class="message-image">
                     {% endif %}
 
+                    {% if message.text %}
                     <p class="message-text">{{ message.text }}</p>
+                    {% endif %}
 
                     {% if message.file %}
-                    <a href="{{ message.file }}" class="message-file" target="_blank">
-                        <i class="fas fa-file"></i> Download
+                    <a href="{{ message.file }}" class="whatsapp-file-card" target="_blank">
+                        <div class="file-icon-container"
+                            style="background-color: {{ message.file_metadata.icon_color }};">
+                            <i class="fas {{ message.file_metadata.icon_class }} file-icon"></i>
+                        </div>
+                        <div class="file-info-container">
+                            <div class="file-name" title="{{ message.file_metadata.filename }}">{{
+                                message.file_metadata.filename }}</div>
+                            <div class="file-meta">{{ message.file_metadata.ext }}</div>
+                        </div>
+                        <div class="file-download-btn">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
                     </a>
                     {% endif %}
 
@@ -195,6 +224,10 @@
     }
 
     .chat-header {
+        display: flex;
+        /* Menjadikan header baris horizontal */
+        align-items: center;
+        /* Menyejajarkan avatar dan teks secara vertikal */
         flex-shrink: 0;
         padding: 15px 20px;
         border-bottom: 1px solid #e0e0e0;
@@ -342,22 +375,39 @@
         margin: 0;
         font-size: 14px;
         word-break: break-word;
+        padding: 0 !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        color: inherit !important;
+    }
+
+    .message.sent .message-text {
+        background: transparent !important;
+        color: #333333 !important;
     }
 
     .message-image {
         max-width: 100%;
         max-height: 250px;
         border-radius: 6px;
-        margin-bottom: 5px;
         display: block;
     }
 
-    .message-file {
-        display: inline-block;
-        margin: 5px 0;
-        font-size: 13px;
-        text-decoration: none;
-        color: #637cf2;
+    .message-content.message-image-content {
+        padding: 4px;
+    }
+
+    .message-content.message-image-content.has-text {
+        padding: 4px 4px 10px 4px;
+    }
+
+    .message-content.message-image-content.has-text .message-image {
+        margin-bottom: 6px;
+    }
+
+    .message-content.message-image-content.has-text .message-text {
+        padding: 4px 8px 0 8px !important;
     }
 
     .message-time {
@@ -365,6 +415,75 @@
         font-size: 10px;
         color: #888;
         text-align: right;
+    }
+
+    /* WhatsApp File Card */
+    .whatsapp-file-card {
+        display: flex;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin: 4px 0;
+        text-decoration: none;
+        color: inherit;
+        gap: 12px;
+        width: 250px;
+        max-width: 100%;
+        transition: background-color 0.2s ease;
+    }
+
+    .whatsapp-file-card:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+        color: inherit;
+    }
+
+    .file-icon-container {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .file-info-container {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .file-name {
+        font-size: 13px;
+        font-weight: 500;
+        color: #303030;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 2px;
+    }
+
+    .file-meta {
+        font-size: 10px;
+        color: #707070;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+
+    .file-download-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #667781;
+        font-size: 12px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px solid #e0e0e0;
+        background-color: #fff;
+        flex-shrink: 0;
     }
 
     .no-messages {
@@ -383,8 +502,8 @@
     const conversationId = "{{ conversation.id }}";
     const userId = "{{ my_uid }}";
     const currentUsername = "{{ my_username }}";
-    const daftarKataKasar = {{ daftar_kata_kasar_json|safe }};
-    
+    const daftarKataKasar = {{ daftar_kata_kasar_json| safe }};
+
     function filterKataKasarJS(text) {
         if (!text) return text;
         let temp = text;
@@ -467,6 +586,50 @@
         });
     }
 
+    function getFileInfo(fileUrl) {
+        let filename = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+        if (filename.includes('_')) {
+            filename = filename.substring(filename.indexOf('_') + 1);
+        }
+
+        let ext = filename.split('.').pop().toLowerCase();
+        let iconClass = 'fa-file-alt';
+        let iconColor = '#90a4ae';
+
+        if (['pdf'].includes(ext)) {
+            iconClass = 'fa-file-pdf';
+            iconColor = '#e53935';
+        } else if (['doc', 'docx'].includes(ext)) {
+            iconClass = 'fa-file-word';
+            iconColor = '#1e88e5';
+        } else if (['xls', 'xlsx'].includes(ext)) {
+            iconClass = 'fa-file-excel';
+            iconColor = '#43a047';
+        } else if (['ppt', 'pptx'].includes(ext)) {
+            iconClass = 'fa-file-powerpoint';
+            iconColor = '#f4511e';
+        } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+            iconClass = 'fa-file-archive';
+            iconColor = '#fdd835';
+        } else if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(ext)) {
+            iconClass = 'fa-file-image';
+            iconColor = '#00acc1';
+        } else if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
+            iconClass = 'fa-file-audio';
+            iconColor = '#8e24aa';
+        } else if (['mp4', 'mkv', 'avi', 'mov', 'webm'].includes(ext)) {
+            iconClass = 'fa-file-video';
+            iconColor = '#3949ab';
+        }
+
+        return {
+            filename: filename,
+            ext: ext.toUpperCase(),
+            iconClass: iconClass,
+            iconColor: iconColor
+        };
+    }
+
     // Fungsi sinkronisasi pesan realtime dari Firestore
     function aktifkanRealtimeChat() {
         db.collection('messages')
@@ -494,14 +657,42 @@
                     let timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     let initials = message.sender ? message.sender.substring(0, 2).toUpperCase() : "??";
 
+                    let hasImage = !!message.image;
+                    let hasText = !!(message.text && message.text.trim() !== '');
+                    let hasFile = !!message.file;
+
+                    let contentClasses = ["message-content"];
+                    if (hasImage) contentClasses.push("message-image-content");
+                    if (hasText) contentClasses.push("has-text");
+                    if (hasFile) contentClasses.push("has-file");
+                    let contentClassStr = contentClasses.join(" ");
+
+                    let fileHtml = '';
+                    if (hasFile) {
+                        let fileInfo = getFileInfo(message.file);
+                        fileHtml = `
+                        <a href="${message.file}" class="whatsapp-file-card" target="_blank">
+                            <div class="file-icon-container" style="background-color: ${fileInfo.iconColor};">
+                                <i class="fas ${fileInfo.iconClass} file-icon"></i>
+                            </div>
+                            <div class="file-info-container">
+                                <div class="file-name" title="${fileInfo.filename}">${fileInfo.filename}</div>
+                                <div class="file-meta">${fileInfo.ext}</div>
+                            </div>
+                            <div class="file-download-btn">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                        </a>`;
+                    }
+
                     const html = `
                     <div class="message ${messageClass}" data-message-id="${message.id_firebase}">
                         ${!isMe ? `<div class="message-avatar-placeholder">${initials}</div>` : ''}
-                        <div class="message-content">
+                        <div class="${contentClassStr}">
                             ${!isMe ? `<p class="message-sender">${message.sender}</p>` : ''}
-                            ${message.image ? '<img src="' + message.image + '" class="message-image">' : ''}
-                            <p class="message-text">${filterKataKasarJS(message.text || '')}</p>
-                            ${message.file ? '<a href="' + message.file + '" class="message-file" target="_blank"><i class="fas fa-file"></i> Download</a>' : ''}
+                            ${hasImage ? `<img src="${message.image}" class="message-image">` : ''}
+                            ${hasText ? `<p class="message-text">${filterKataKasarJS(message.text)}</p>` : ''}
+                            ${fileHtml}
                             <p class="message-time">${timeStr}</p>
                         </div>
                     </div>`;

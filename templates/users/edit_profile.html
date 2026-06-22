@@ -7,55 +7,58 @@
 <div class="form-container">
     <div class="form-card">
         <h2>Edit Profil</h2>
-        
+
         {% if error %}
-            <div class="alert alert-danger" role="alert">
-                {{ error }}
-            </div>
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
         {% endif %}
-        
+
         <form method="POST" enctype="multipart/form-data" class="edit-profile-form">
             {% csrf_token %}
-            
+
             <div class="form-group">
-                <label for="avatar">Avatar</label>
-                {% if profile.avatar %}
-                    <div class="avatar-preview">
-                        <img src="{{ profile.avatar.url }}" alt="Avatar">
-                    </div>
-                {% endif %}
+                <label for=\"avatar\">Avatar</label>
+                <div class="avatar-preview mb-2">
+                    <img id="avatar-preview-img"
+                        src="{% if profile.avatar %}{{ profile.avatar }}{% else %}/static/images/default-avatar.png{% endif %}"
+                        alt="Avatar"
+                        style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; display: block; margin-bottom: 10px;">
+                </div>
                 <input type="file" id="avatar" name="avatar" class="form-control" accept="image/*">
             </div>
-            
+
             <div class="form-group">
                 <label for="first_name">Nama Depan</label>
-                <input type="text" id="first_name" name="first_name" class="form-control" value="{{ profile.first_name }}">
+                <input type="text" id="first_name" name="first_name" class="form-control"
+                    value="{{ profile.first_name }}">
             </div>
-            
+
             <div class="form-group">
                 <label for="last_name">Nama Belakang</label>
                 <input type="text" id="last_name" name="last_name" class="form-control" value="{{ profile.last_name }}">
             </div>
-            
+
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" class="form-control" value="{{ profile.email }}" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="phone">Nomor Telepon</label>
                 <input type="tel" id="phone" name="phone" class="form-control" value="{{ profile.phone }}">
             </div>
-            
+
             <div class="form-group">
                 <label for="bio">Bio</label>
                 <textarea id="bio" name="bio" class="form-control" rows="4">{{ profile.bio }}</textarea>
             </div>
-            
+
             <div class="form-actions d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
                 <div>
                     <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                    <a href="{% url 'users:user_profile' request.session.username %}" class="btn btn-secondary">Batal</a>
+                    <a href="{% url 'users:user_profile' request.session.username %}"
+                        class="btn btn-secondary">Batal</a>
                 </div>
                 <button type="button" class="btn btn-danger" onclick="confirmDeleteAccount()">
                     <i class="fas fa-trash-alt me-2"></i>Hapus Akun
@@ -66,10 +69,27 @@
 </div>
 
 <script>
-function confirmDeleteAccount() {
-    if (confirm("Apakah Anda yakin ingin menghapus akun Anda secara permanen? Tindakan ini tidak dapat dibatalkan.")) {
-        window.location.href = "{% url 'users:delete_user' %}";
+    // Fitur Preview Foto Profil Real-Time di Browser sebelum disimpan
+    document.getElementById('avatar').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const previewImg = document.getElementById('avatar-preview-img');
+                if (previewImg) {
+                    previewImg.src = e.target.result;
+                }
+            };
+
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function confirmDeleteAccount() {
+        if (confirm("Apakah Anda yakin ingin menghapus akun Anda secara permanen? Tindakan ini tidak dapat dibatalkan.")) {
+            window.location.href = "{% url 'users:delete_user' %}";
+        }
     }
-}
 </script>
 {% endblock %}

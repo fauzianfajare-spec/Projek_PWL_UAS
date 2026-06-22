@@ -45,8 +45,12 @@
                             {% else %}
                             {% for participant in conversation.participants.all %}
                             {% if participant.username != request.session.username %}
+                            {% if participant.profile.avatar %}
+                            <img src="{{ participant.profile.avatar.url }}" alt="{{ participant.username }}">
+                            {% else %}
                             <img src="https://ui-avatars.com/api/?name={{ participant.username }}&background=667eea&color=fff"
                                 alt="{{ participant.username }}">
+                            {% endif %}
                             {% endif %}
                             {% endfor %}
                             {% endif %}
@@ -590,7 +594,6 @@
         document.getElementById("panel-main-chats").classList.add("inactive");
         document.getElementById("panel-add-member").classList.add("active");
 
-        // --- DIUBAH: Menggunakan Django URL Template Tag (Reverse Dinamis) ---
         const urlTemplate = "{% url 'chat:add_member_ajax' 0 %}";
         const finalUrl = urlTemplate.replace('0', conversationId);
 
@@ -647,9 +650,9 @@
         const panelGroup = document.getElementById("panel-create-group");
         const panelAddMember = document.getElementById("panel-add-member");
 
-        // Tutup Panel Tambah Anggota (Kembali ke Utama)
+        // PERBAIKAN: Memperbaiki kesalahan syntax (.remove -> .classList.remove) agar tombol kembali berfungsi
         document.getElementById("btn-close-add-member")?.addEventListener("click", function () {
-            panelMain.remove("inactive");
+            panelMain.classList.remove("inactive");
             panelAddMember.classList.remove("active");
             document.getElementById("form-add-member").reset();
         });
@@ -665,7 +668,6 @@
                 return;
             }
 
-            // --- DIUBAH: Menggunakan Django URL Template Tag (Reverse Dinamis untuk POST) ---
             const submitUrlTemplate = "{% url 'chat:add_member_ajax' 0 %}";
             const finalSubmitUrl = submitUrlTemplate.replace('0', activeAddMemberConversationId);
 

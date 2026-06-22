@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +18,7 @@
 
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
 
     <div class="container">
@@ -32,7 +34,7 @@
                     <i class="fas fa-comments"></i> Chats
                 </a>
 
-                <a href="{% url 'users:edit_profile' %}" class="nav-link">
+                <a href="{% url 'users:user_profile' request.session.username %}" class="nav-link">
                     <i class="fas fa-user"></i> {{ request.session.username }}
                 </a>
 
@@ -60,4 +62,5 @@
     {% block extra_js %}{% endblock %}
 
 </body>
+
 </html>

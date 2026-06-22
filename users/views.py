@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
+from django.core.files.storage import FileSystemStorage
 from chat.decorators import firebase_login_required
 import firebase_admin
 from firebase_admin import auth, firestore
 import requests
 import os
+
 
 # Pastikan Firestore client sudah terinisialisasi
 db = firestore.client()
@@ -86,12 +88,19 @@ def login_view(request):
                 
                 # 2. Ambil data username asli dari Firestore Cloud berdasarkan UID
                 username_dari_firestore = None
+                avatar_dari_firestore = None
                 try:
                     user_doc = db.collection('users').document(user_firebase_uid).get()
                     if user_doc.exists:
-                        username_dari_firestore = user_doc.to_dict().get('username')
+                        user_data = user_doc.to_dict()
+                        username_dari_firestore = user_data.get('username')
+                        avatar_dari_firestore = user_data.get('avatar')
+                        # Update status online to True
+                        db.collection('users').document(user_firebase_uid).update({
+                            'is_online': True
+                        })
                 except Exception as doc_error:
-                    print(f"Gagal mengambil data username dari Firestore: {doc_error}")
+                    print(f"Gagal mengambil data username / update status online dari Firestore: {doc_error}")
                 
                 # Jika di Firestore tidak ada, gunakan default potongan email depan sebagai username
                 if not username_dari_firestore:
@@ -100,6 +109,8 @@ def login_view(request):
                 # 3. Simpan data user ke Session Django agar statusnya terhitung "Masuk/Login"
                 request.session['firebase_user_uid'] = user_firebase_uid
                 request.session['username'] = username_dari_firestore
+                request.session['avatar'] = avatar_dari_firestore
+                request.session.modified = True
                 
                 # 4. ALUR SUKSES MUTLAK: Alihkan langsung ke halaman utama daftar obrolan
                 return redirect('chat:chat_list')
@@ -117,6 +128,16 @@ def login_view(request):
     return render(request, 'users/login.html')
 
 def logout_view(request):
+    # Update status online to False
+    my_uid = request.session.get('firebase_user_uid')
+    if my_uid:
+        try:
+            db.collection('users').document(my_uid).update({
+                'is_online': False
+            })
+        except Exception as e:
+            print(f"Gagal update status offline di Firestore saat logout: {e}")
+            
     # Hapus semua data session di browser
     request.session.flush()
     return redirect('users:login')
@@ -149,46 +170,91 @@ def user_profile(request, username):
 # FITUR TAMBAHAN: EDIT PROFILE FIREBASE FIRESTORE
 # ========================================================
 @firebase_login_required
+def user_profile(request, username):
+    try:
+        # TANYA KE FIRESTORE: Cari user berdasarkan field 'username' (Bukan SQLite!)
+        users_ref = db.collection('users').where('username', '==', username).limit(1).stream()
+        profile_data = None
+        profile_uid = None
+        
+        for doc in users_ref:
+            profile_data = doc.to_dict()
+            profile_uid = doc.id # Mengambil ID dokumen sebagai UID
+            
+        if not profile_data:
+            return HttpResponse("Pengguna tidak ditemukan.", status=404)
+            
+        context = {
+            'profile': profile_data,
+            'profile_uid': profile_uid,
+            'profile_user_username': username,
+        }
+        return render(request, 'users/profile.html', context)
+    except Exception as e:
+        return HttpResponse(f"Error Firestore: {e}", status=500)
+
+
+@firebase_login_required
 def edit_profile(request):
     my_uid = request.session.get('firebase_user_uid')
-    my_username = request.session.get('username')
-    
-    # Ambil data profil terbaru dari Firestore untuk mengisi form awal
     doc_ref = db.collection('users').document(my_uid)
-    doc = doc_ref.get()
     
-    if not doc.exists:
-        return HttpResponse("Profil tidak ditemukan di database cloud.", status=404)
-        
-    profile_data = doc.to_dict()
-
     if request.method == 'POST':
-        bio = request.POST.get('bio', '')
-        phone = request.POST.get('phone', '')
-        avatar_url = request.POST.get('avatar_url', '')
-        first_name = request.POST.get('first_name', '')
-        last_name = request.POST.get('last_name', '')
-        email = request.POST.get('email', '')
+        # Ambil data inputan dari Form HTML
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        bio = request.POST.get('bio', '').strip()
         
+        # Ambil data profil lama di Firestore agar data penting (seperti username) tidak hilang
+        doc = doc_ref.get()
+        old_data = doc.to_dict() if doc.exists else {}
+        
+        # Siapkan data baru untuk di-update ke Firestore
+        update_data = {
+            'first_name': first_name,
+            'last_name': last_name,
+            'email': email,
+            'phone': phone,
+            'bio': bio,
+            'username': old_data.get('username', request.session.get('username')),
+            'avatar': old_data.get('avatar', '/static/images/default-avatar.png') # Default awal
+        }
+        
+        # Proses Upload Avatar Baru jika user memasukkan file gambar
+        if 'avatar' in request.FILES:
+            avatar_file = request.FILES['avatar']
+            fs = FileSystemStorage()
+            # Simpan file ke lokal media dengan nama unik berbasis UID
+            filename = fs.save(f"avatars/{my_uid}_{avatar_file.name}", avatar_file)
+            avatar_url = fs.url(filename) # Menghasilkan teks path seperti: /media/avatars/...
+            update_data['avatar'] = avatar_url
+
         try:
-            # Update data langsung di dokumen Firestore cloud
-            doc_ref.update({
-                'bio': bio,
-                'phone': phone,
-                'avatar': avatar_url,
-                'first_name': first_name,
-                'last_name': last_name,
-                'email': email
-            })
-            # Kembalikan pengguna ke halaman profilnya sendiri
-            return redirect('users:user_profile', username=my_username)
+            # SIMPAN LANGSUNG KE FIRESTORE (Menggunakan set dengan merge=True agar aman)
+            doc_ref.set(update_data, merge=True)
+            
+            # Sinkronisasi data krusial ke session Django agar tidak terjadi miss-match
+            request.session['username'] = update_data['username']
+            request.session['avatar'] = update_data['avatar']
+            request.session.modified = True
+            
+            # Berhasil! Redirect kembali ke halaman profile utama Anda
+            return redirect('users:user_profile', username=update_data['username'])
+            
         except Exception as e:
             return render(request, 'users/edit_profile.html', {
-                'profile': profile_data,
-                'error': f'Gagal memperbarui profil: {str(e)}'
+                'error': f"Gagal menyimpan ke Firebase: {e}",
+                'profile': update_data
             })
+            
+    else:
+        # JIKA AKSES HALAMAN (GET): Ambil data ter-update langsung dari Firestore untuk ditampilkan di Form
+        doc = doc_ref.get()
+        profile_data = doc.to_dict() if doc.exists else {}
+        return render(request, 'users/edit_profile.html', {'profile': profile_data})
 
-    return render(request, 'users/edit_profile.html', {'profile': profile_data})
 
 # ========================================================
 # FITUR TAMBAHAN: PENCARIAN USER BERBASIS FIRESTORE
@@ -237,4 +303,4 @@ def delete_user(request):
         return render(request, 'users/edit_profile.html', {
             'profile': profile_data,
             'error': f'Gagal menghapus akun: {str(e)}'
-        })
+        })
