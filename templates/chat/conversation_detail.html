@@ -150,6 +150,11 @@
 
                     <p class="message-time">{{ message.created_at|date:"H:i" }}</p>
                 </div>
+                {% if message.sender == my_username %}
+                <button class="btn-delete-msg" onclick="confirmDeleteMessage('{{ message.id_firebase }}')" title="Hapus pesan">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                {% endif %}
             </div>
             {% empty %}
             <p class="no-messages">Belum ada pesan. Mulai percakapan!</p>
@@ -491,6 +496,39 @@
         color: #bbb;
         margin-top: 50px;
     }
+
+    /* Delete Message Button */
+    .message {
+        position: relative;
+    }
+    
+    .btn-delete-msg {
+        background: none;
+        border: none;
+        color: #a0a0a0;
+        font-size: 13px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+        align-self: center;
+        margin: 0 8px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .btn-delete-msg:hover {
+        color: #e53935;
+        background-color: rgba(229, 57, 53, 0.1);
+    }
+    
+    .message:hover .btn-delete-msg {
+        opacity: 1;
+    }
 </style>
 {% endblock %}
 
@@ -584,6 +622,26 @@
             success: function () { $('#messageText').val('').css('height', '40px'); },
             error: function () { alert('Error sending message'); }
         });
+    }
+
+    function confirmDeleteMessage(messageId) {
+        if (confirm("Apakah Anda yakin ingin menghapus pesan ini?")) {
+            $.ajax({
+                url: `/api/delete-message/${messageId}/`,
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.status !== 'success') {
+                        alert('Gagal menghapus pesan: ' + response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert('Terjadi kesalahan saat menghapus pesan: ' + error);
+                }
+            });
+        }
     }
 
     function getFileInfo(fileUrl) {
@@ -685,6 +743,14 @@
                         </a>`;
                     }
 
+                    let deleteBtnHtml = '';
+                    if (isMe) {
+                        deleteBtnHtml = `
+                        <button class="btn-delete-msg" onclick="confirmDeleteMessage('${message.id_firebase}')" title="Hapus pesan">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>`;
+                    }
+
                     const html = `
                     <div class="message ${messageClass}" data-message-id="${message.id_firebase}">
                         ${!isMe ? `<div class="message-avatar-placeholder">${initials}</div>` : ''}
@@ -695,6 +761,7 @@
                             ${fileHtml}
                             <p class="message-time">${timeStr}</p>
                         </div>
+                        ${deleteBtnHtml}
                     </div>`;
                     $('#messagesContainer').append(html);
                 });
