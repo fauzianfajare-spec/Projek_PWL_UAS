@@ -11,7 +11,7 @@ Aplikasi chat modern yang memungkinkan pengguna untuk berkomunikasi secara real-
 - ⏱️ **Real-time Updates** - Pesan yang dikirim dan diterima secara instant
 - 👤 **User Profile** - Profil pengguna dengan avatar dan bio
 - 🔍 **User Search** - Cari pengguna untuk mulai chat
-- ✅ **Emoji Reactions** - Beri reaksi pada pesan (ready untuk dikembangkan)
+
 
 ## 🚀 Quick Start
 
