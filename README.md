@@ -11,7 +11,7 @@ Aplikasi chat modern yang memungkinkan pengguna untuk berkomunikasi secara real-
 - ⏱️ **Real-time Updates** - Pesan yang dikirim dan diterima secara instant
 - 👤 **User Profile** - Profil pengguna dengan avatar dan bio
 - 🔍 **User Search** - Cari pengguna untuk mulai chat
-- ✅ **Emoji Reactions** - Beri reaksi pada pesan (ready untuk dikembangkan)
+
 
 ## 🚀 Quick Start
 
@@ -150,7 +150,6 @@ OwiChat/
 ### MessageReaction
 - `message` - ForeignKey ke Message
 - `user` - ForeignKey ke User
-- `emoji` - Emoji reaction
 - `created_at` - Waktu pembuatan
 
 ## 🎨 Frontend Features
@@ -174,7 +173,7 @@ OwiChat/
 ## 🔧 Teknologi yang Digunakan
 
 - **Backend**: Django 6.0.5
-- **Database**: SQLite
+- **Database**: Firebase 
 - **Frontend**: HTML5, CSS3, JavaScript (jQuery)
 - **Real-time**: Django Channels
 - **API**: Django REST Framework
@@ -189,7 +188,6 @@ OwiChat/
 - [ ] Typing indicators
 - [ ] Message read receipts
 - [ ] User online status
-- [ ] Call/Video call integration
 - [ ] Message encryption
 - [ ] File storage ke cloud
 - [ ] Push notifications
