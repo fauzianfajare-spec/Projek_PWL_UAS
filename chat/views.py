@@ -12,7 +12,7 @@ import traceback
 from django.contrib import messages
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-
+from django.contrib.auth.models import User
 
 
 
@@ -588,7 +588,6 @@ def get_messages(request, conversation_id):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-
 @require_POST
 @firebase_login_required
 def send_message(request):
@@ -634,7 +633,6 @@ def send_message(request):
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
 
 @require_POST
 @firebase_login_required

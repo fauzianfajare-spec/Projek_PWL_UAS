@@ -111,16 +111,34 @@
             {% for message in chat_messages %}
             <div class="message {% if message.sender == my_username %}sent{% else %}received{% endif %}"
                 data-message-id="{{ message.id_firebase }}">
+
                 {% if message.sender != my_username %}
-                <div class="message-avatar-placeholder">
-                    {{ message.sender|slice:":2"|upper }}
+                <div class="message-avatar" style="margin-right: 10px; flex-shrink: 0;">
+                    {% for participant in conversation.participants.all %}
+                    {% if participant.username == message.sender %}
+                    {% if participant.profile.avatar %}
+                    <img src="{{ participant.profile.avatar.url }}" alt="{{ participant.username }}"
+                        style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                    <img src="https://ui-avatars.com/api/?name={{ participant.username }}&background=667eea&color=fff"
+                        alt="{{ participant.username }}" style="width: 35px; height: 35px; border-radius: 50%;">
+                    {% endif %}
+                    {% endif %}
+                    {% endfor %}
                 </div>
                 {% endif %}
 
                 <div
                     class="message-content {% if message.image %}message-image-content{% endif %} {% if message.text %}has-text{% endif %} {% if message.file %}has-file{% endif %}">
+
                     {% if message.sender != my_username %}
-                    <p class="message-sender">{{ message.sender }}</p>
+                    <p class="message-sender">
+                        {% for participant in conversation.participants.all %}
+                        {% if participant.username == message.sender %}
+                        {{ participant.get_full_name|default:participant.username }}
+                        {% endif %}
+                        {% endfor %}
+                    </p>
                     {% endif %}
 
                     {% if message.image %}
@@ -151,7 +169,8 @@
                     <p class="message-time">{{ message.created_at|date:"H:i" }}</p>
                 </div>
                 {% if message.sender == my_username %}
-                <button class="btn-delete-msg" onclick="confirmDeleteMessage('{{ message.id_firebase }}')" title="Hapus pesan">
+                <button class="btn-delete-msg" onclick="confirmDeleteMessage('{{ message.id_firebase }}')"
+                    title="Hapus pesan">
                     <i class="fas fa-trash-alt"></i>
                 </button>
                 {% endif %}
@@ -230,9 +249,7 @@
 
     .chat-header {
         display: flex;
-        /* Menjadikan header baris horizontal */
         align-items: center;
-        /* Menyejajarkan avatar dan teks secara vertikal */
         flex-shrink: 0;
         padding: 15px 20px;
         border-bottom: 1px solid #e0e0e0;
@@ -341,21 +358,6 @@
         justify-content: flex-start;
     }
 
-    .message-avatar-placeholder {
-        width: 35px;
-        height: 35px;
-        background: #5c6bc0;
-        color: #ffffff;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        font-weight: bold;
-        margin-right: 10px;
-        flex-shrink: 0;
-    }
-
     .message-content {
         max-width: 70%;
         padding: 10px 14px;
@@ -422,7 +424,6 @@
         text-align: right;
     }
 
-    /* WhatsApp File Card */
     .whatsapp-file-card {
         display: flex;
         align-items: center;
@@ -497,11 +498,10 @@
         margin-top: 50px;
     }
 
-    /* Delete Message Button */
     .message {
         position: relative;
     }
-    
+
     .btn-delete-msg {
         background: none;
         border: none;
@@ -520,12 +520,12 @@
         justify-content: center;
         flex-shrink: 0;
     }
-    
+
     .btn-delete-msg:hover {
         color: #e53935;
         background-color: rgba(229, 57, 53, 0.1);
     }
-    
+
     .message:hover .btn-delete-msg {
         opacity: 1;
     }
@@ -541,6 +541,20 @@
     const userId = "{{ my_uid }}";
     const currentUsername = "{{ my_username }}";
     const daftarKataKasar = {{ daftar_kata_kasar_json| safe }};
+
+    // --- MAP DATA AVATAR & DISPLAY NAME DARI CONTEXT DJANGO ---
+    const userAvatars = {
+        {% for participant in conversation.participants.all %}
+    "{{ participant.username }}": {% if participant.profile.avatar %} "{{ participant.profile.avatar.url }}"{% else %} "https://ui-avatars.com/api/?name={{ participant.username }}&background=667eea&color=fff"{% endif %},
+    {% endfor %}
+    };
+
+    const userDisplayNames = {
+        {% for participant in conversation.participants.all %}
+    "{{ participant.username }}": "{{ participant.get_full_name|default:participant.username }}",
+        {% endfor %}
+    };
+    // --------------------------------------------------------
 
     function filterKataKasarJS(text) {
         if (!text) return text;
@@ -688,7 +702,6 @@
         };
     }
 
-    // Fungsi sinkronisasi pesan realtime dari Firestore
     function aktifkanRealtimeChat() {
         db.collection('messages')
             .where('conversation_id', '==', conversationId)
@@ -713,7 +726,10 @@
                     let messageClass = isMe ? "sent" : "received";
                     let dateObj = message.created_at ? new Date(message.created_at.seconds * 1000) : new Date();
                     let timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    let initials = message.sender ? message.sender.substring(0, 2).toUpperCase() : "??";
+
+                    // AMBIL AVATAR & DISPLAY NAME DINAMIS SESUAI USER MAP
+                    let avatarUrl = userAvatars[message.sender] || `https://ui-avatars.com/api/?name=${message.sender}&background=667eea&color=fff`;
+                    let displayName = userDisplayNames[message.sender] || message.sender;
 
                     let hasImage = !!message.image;
                     let hasText = !!(message.text && message.text.trim() !== '');
@@ -751,11 +767,15 @@
                         </button>`;
                     }
 
+                    // OUTPUT HTML DENGAN AVATAR & DISPLAY NAME BARU
                     const html = `
                     <div class="message ${messageClass}" data-message-id="${message.id_firebase}">
-                        ${!isMe ? `<div class="message-avatar-placeholder">${initials}</div>` : ''}
+                        ${!isMe ? `
+                        <div class="message-avatar" style="margin-right: 10px; flex-shrink: 0;">
+                            <img src="${avatarUrl}" alt="${message.sender}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                        </div>` : ''}
                         <div class="${contentClassStr}">
-                            ${!isMe ? `<p class="message-sender">${message.sender}</p>` : ''}
+                            ${!isMe ? `<p class="message-sender">${displayName}</p>` : ''}
                             ${hasImage ? `<img src="${message.image}" class="message-image">` : ''}
                             ${hasText ? `<p class="message-text">${filterKataKasarJS(message.text)}</p>` : ''}
                             ${fileHtml}
