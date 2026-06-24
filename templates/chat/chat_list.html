@@ -583,7 +583,7 @@
 <script>
     let activeAddMemberConversationId = null;
 
-    // Fungsi AJAX untuk memuat user dan menampilkan panel Tambah Anggota (Sliding)
+    // FUNGSI UTAMA YANG DIPERBAIKI
     function openAddMemberPanel(event, conversationId, conversationName) {
         event.preventDefault();
         event.stopPropagation();
@@ -592,50 +592,45 @@
         document.getElementById("add-member-group-name").innerText = "Grup: " + conversationName;
 
         const container = document.getElementById("add-member-container");
-        container.innerHTML = '<p class="text-center p-3 text-muted">Memuat kontak...</p>';
+        container.innerHTML = ""; // Bersihkan kontainer
 
         // Geser panel utama ke kiri, dan aktifkan panel tambah anggota
         document.getElementById("panel-main-chats").classList.add("inactive");
         document.getElementById("panel-add-member").classList.add("active");
 
-        const urlTemplate = "{% url 'chat:add_member_ajax' 0 %}";
-        const finalUrl = urlTemplate.replace('0', conversationId);
+        // Gunakan Array data bentukan Engine Django (Hanya berisi list Teman / Users milik Anda)
+        const userFriendsList = [
+            {% if users %}
+    {% for user in users %}
+    {
+        id: "{{ user.user.id }}",
+            display_name: "{{ user.display_name|escapejs }}",
+                avatar_url: "{% if user.profile_image %}{{ user.profile_image.url }}{% else %}https://ui-avatars.com/api/?name={{ user.display_name|urlencode }}&background=764ba2&color=fff{% endif %}"
+    },
+    {% endfor %}
+    {% endif %}
+        ];
 
-        // Tembak API internal Django untuk ambil data user yang tersedia
-        fetch(finalUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                container.innerHTML = "";
-                if (data.status === 'success' && data.users.length > 0) {
-                    data.users.forEach(user => {
-                        const row = `
-                            <label class="wa-contact-item" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid #f1f1f1; margin: 0; padding: 10px 15px;">
-                                <div style="display: flex; align-items: center; min-width: 0;">
-                                    <div class="wa-avatar" style="margin-right: 12px;">
-                                        <img src="${user.avatar_url}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">
-                                    </div>
-                                    <div style="min-width: 0;">
-                                        <h5 style="margin:0; font-size: 13px; font-weight: 600; color: #333;">${user.display_name}</h5>
-                                    </div>
-                                </div>
-                                <input type="checkbox" name="selected_users" value="${user.id}" style="width: 18px; height: 18px; accent-color: #667eea; cursor: pointer;">
-                            </label>
-                        `;
-                        container.insertAdjacentHTML('beforeend', row);
-                    });
-                } else {
-                    container.innerHTML = '<p class="text-center p-3 text-muted" style="font-size:13px;">Semua teman Anda sudah berada di grup ini.</p>';
-                }
-            })
-            .catch(err => {
-                console.error("Gagal mengambil kontak:", err);
-                container.innerHTML = '<p class="text-center p-3 text-danger">Gagal memuat data kontak.</p>';
-            });
+    if (userFriendsList.length === 0) {
+        container.innerHTML = '<p class="text-center p-3 text-muted" style="font-size:13px;">Belum ada teman yang ditambahkan.</p>';
+    } else {
+        userFriendsList.forEach(user => {
+            const row = `
+                    <label class="wa-contact-item" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid #f1f1f1; margin: 0; padding: 10px 15px;">
+                        <div style="display: flex; align-items: center; min-width: 0;">
+                            <div class="wa-avatar" style="margin-right: 12px;">
+                                <img src="${user.avatar_url}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">
+                            </div>
+                            <div style="min-width: 0;">
+                                <h5 style="margin:0; font-size: 13px; font-weight: 600; color: #333;">${user.display_name}</h5>
+                            </div>
+                        </div>
+                        <input type="checkbox" name="selected_users" value="${user.id}" style="width: 18px; height: 18px; accent-color: #764ba2; cursor: pointer;">
+                    </label>
+                `;
+            container.insertAdjacentHTML('beforeend', row);
+        });
+    }
     }
 
     // Fungsi konfirmasi bawaan lama
