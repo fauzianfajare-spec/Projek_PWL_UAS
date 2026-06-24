@@ -645,7 +645,6 @@ def delete_message(request, message_id):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-
 @firebase_login_required
 def add_contact(request):
     my_username = request.session.get('username')
@@ -653,26 +652,50 @@ def add_contact(request):
     search_query = request.POST.get('search_user', '').strip()
     
     if not search_query:
-        messages.error(request, "Username tidak boleh kosong.")
+        messages.error(request, "Username atau Email tidak boleh kosong.")
         return redirect('chat:chat_list')
     
+    # Validasi agar tidak mencari diri sendiri via username
     if search_query == my_username:
         messages.error(request, "Anda tidak dapat menambahkan diri sendiri.")
         return redirect('chat:chat_list')
         
     try:
-        contact_ref = db.collection('users').where('username', '==', search_query).limit(1).stream()
+        # 1. Tentukan pencarian berdasarkan format input (Email atau Username)
+        if '@' in search_query:
+            # Cari berdasarkan email
+            user_query = db.collection('users').where('email', '==', search_query).limit(1).stream()
+        else:
+            # Cari berdasarkan username
+            user_query = db.collection('users').where('username', '==', search_query).limit(1).stream()
+        
         contact_exists = False
         contact_uid = None
-        for doc in contact_ref:
+        contact_display_name = search_query # Untuk kebutuhan pesan sukses/info
+        
+        for doc in user_query:
             contact_exists = True
             contact_uid = doc.id
+            # Ambil username asli dari DB jika pencarian menggunakan email
+            doc_data = doc.to_dict()
+            contact_display_name = doc_data.get('username', search_query)
+            
+            # Ambil email dari DB untuk memastikan user tidak menambahkan email dirinya sendiri
+            if doc_data.get('email') == request.session.get('email'): # Pastikan simpan 'email' di session saat login
+                messages.error(request, "Anda tidak dapat menambahkan diri sendiri.")
+                return redirect('chat:chat_list')
             break
         
         if not contact_exists:
             messages.error(request, "Pengguna tidak ditemukan di sistem.")
             return redirect('chat:chat_list')
         
+        # Proteksi tambahan jika UID ternyata sama (mencegah add diri sendiri via UID)
+        if contact_uid == my_uid:
+            messages.error(request, "Anda tidak dapat menambahkan diri sendiri.")
+            return redirect('chat:chat_list')
+        
+        # 2. Cek apakah percakapan private sudah ada
         query = db.collection('conversations') \
                   .where('conversation_type', '==', 'private') \
                   .where('participants', 'array_contains', my_uid) \
@@ -686,9 +709,10 @@ def add_contact(request):
                 break
 
         if existing_conv_id:
-            messages.info(request, f"Obrolan dengan {search_query} sudah ada.")
+            messages.info(request, f"Obrolan dengan {contact_display_name} sudah ada.")
             return redirect('chat:conversation_detail', pk=existing_conv_id)
         
+        # 3. Buat percakapan baru jika belum ada
         new_ref = db.collection('conversations').document()
         new_ref.set({
             'name': '',
@@ -700,7 +724,7 @@ def add_contact(request):
             'group_avatar': ''
         })
         
-        messages.success(request, f"Berhasil menambahkan {search_query}!")
+        messages.success(request, f"Berhasil menambahkan {contact_display_name}!")
         return redirect('chat:conversation_detail', pk=new_ref.id)
         
     except Exception as e:
