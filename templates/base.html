@@ -31,15 +31,15 @@
 
             <nav class="navbar-menu">
                 <a href="{% url 'chat:chat_list' %}" class="nav-link">
-                    <i class="fas fa-comments"></i> Chats
+                    <i class="fas fa-comments"></i>
                 </a>
 
                 <a href="{% url 'users:user_profile' request.session.username %}" class="nav-link">
-                    <i class="fas fa-user"></i> {{ request.session.username }}
+                    <i class="fas fa-user"></i>
                 </a>
 
                 <a href="{% url 'users:logout' %}" class="nav-link">
-                    <i class="fas fa-sign-out-alt"></i> Logout
+                    <i class="fas fa-sign-out-alt"></i>
                 </a>
             </nav>
         </header>

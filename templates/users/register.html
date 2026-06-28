@@ -7,40 +7,115 @@
 <div class="auth-container">
     <div class="auth-card">
         <h2>Daftar OWI Chat</h2>
-        
+
+        <div id="js-error" class="alert alert-danger" style="display: none;"></div>
         {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
+        <div class="alert alert-danger">{{ error }}</div>
         {% endif %}
-        
+
         <form method="POST" class="auth-form">
             {% csrf_token %}
-            
+
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" class="form-control" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" class="form-control" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" class="form-control" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="password2">Konfirmasi Password</label>
-                <input type="password" id="password2" name="password2" class="form-control" required>
+                <input type="password2" id="password2" name="password2" class="form-control" required>
             </div>
-            
+
             <button type="submit" class="btn btn-primary">Daftar</button>
         </form>
-        
-        <p class="auth-link">
+
+        <div class="auth-divider" style="text-align: center; margin: 20px 0; color: #aaa; position: relative;">
+            <hr style="border: 0; border-top: 1px solid #eee;">
+            <span
+                style="background: #fff; padding: 0 10px; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);">atau</span>
+        </div>
+
+        <button id="google-sign-in-btn" class="btn btn-google"
+            style="display: flex; align-items: center; justify-content: center; width: 100%; background: #fff; color: #757575; border: 1px solid #dadce0; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+            <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_24dp.png"
+                alt="Google Logo" style="width: 20px; margin-right: 10px;">
+            Daftar dengan Google
+        </button>
+
+        <p class="auth-link" style="margin-top: 20px;">
             Sudah punya akun? <a href="{% url 'users:login' %}">Login di sini</a>
         </p>
     </div>
 </div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script>
+    // 2. Konfigurasi Firebase Web App Anda
+    // Salin data ini dari Project Settings -> bagian "Your Apps" -> Web App di Firebase Console Anda
+    const firebaseConfig = {
+        apiKey: "AIzaSyD9l4LlyC641lKqAMPS1tUPylyGWBWlto4", // Samakan dengan Web API Key Anda
+        authDomain: "PROYEK_KAMU.firebaseapp.com",        // Ganti dengan authDomain proyek Anda
+        projectId: "PROYEK_KAMU",                         // Ganti dengan project ID Anda
+        storageBucket: "PROYEK_KAMU.appspot.com",
+        messagingSenderId: "XXXXXXXXXXXX",
+        appId: "X:XXXX:web:XXXX"
+    };
+
+    // Inisialisasi Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    // 3. Logika Klik Tombol Google Sign-In
+    document.getElementById('google-sign-in-btn').addEventListener('click', function () {
+        const errorDiv = document.getElementById('js-error');
+        errorDiv.style.display = 'none'; // Sembunyikan error sebelumnya jika ada
+
+        firebase.auth().signInWithPopup(provider)
+            .then((result) => {
+                // Berhasil login ke Google, ambil ID Token user
+                return result.user.getIdToken();
+            })
+            .then((idToken) => {
+                // 4. Kirim ID Token tersebut ke Backend Django via Fetch API
+                return fetch("{% url 'users:google_auth' %}", { // Pastikan name url sesuai dengan urls.py Anda (misal: google_auth)
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Jika tidak memakai @csrf_exempt di backend, sertakan token csrf di bawah ini:
+                        // 'X-CSRFToken': '{{ csrf_token }}' 
+                    },
+                    body: JSON.stringify({ id_token: idToken })
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Jika backend sukses memproses session, redirect user ke halaman utama/chat list
+                    window.location.href = data.redirect_url;
+                } else {
+                    // Tampilkan pesan error jika backend mengembalikan status gagal
+                    errorDiv.innerText = data.message;
+                    errorDiv.style.display = 'block';
+                }
+            })
+            .catch((error) => {
+                console.error("Error Autentikasi Google:", error);
+                errorDiv.innerText = "Gagal melakukan otentikasi dengan Google: " + error.message;
+                errorDiv.style.display = 'block';
+            });
+    });
+</script>
 {% endblock %}

@@ -11,4 +11,5 @@ urlpatterns = [
     path('edit-profile/', views.edit_profile, name='edit_profile'),
     path('search-users/', views.search_users, name='search_users'),
     path('delete-account/', views.delete_user, name='delete_user'),
+    path('google-auth/', views.google_auth, name='google_auth'),
 ]
