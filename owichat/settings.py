@@ -171,5 +171,7 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://owichat.onrender.com",
 ]
-
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# PERBAIKAN: Mengizinkan komunikasi dengan jendela popup (Google Sign-In)
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'

@@ -16,6 +16,29 @@
     <!-- CSS Sendiri -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
+    <style>
+        /* Mobile Responsive Adjustments */
+        @media (max-width: 768px) {
+            .container {
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            main {
+                padding: 0 !important;
+            }
+            .navbar {
+                padding: 0.5rem 1rem !important;
+            }
+            .navbar-brand h1 {
+                font-size: 1.2rem !important;
+            }
+            .nav-link {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -46,6 +69,16 @@
         {% endif %}
 
         <main>
+            {% if messages %}
+                <div class="messages-container" style="margin-bottom: 20px;">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }}" style="padding: 15px; border-radius: 4px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; margin-bottom: 10px;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             {% block content %}{% endblock %}
         </main>
 

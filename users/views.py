@@ -3,6 +3,8 @@ from django.http import JsonResponse, HttpResponse
 from django.core.files.storage import FileSystemStorage
 from chat.decorators import firebase_login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.urls import reverse
+from django.contrib import messages
 import json
 import firebase_admin
 from firebase_admin import auth, firestore
@@ -66,174 +68,132 @@ def register(request):
 
     return render(request, 'users/register.html')
 
-
 @csrf_exempt 
 def google_auth(request):
     """
-    Endpoint khusus menerima token Google Sign-In langsung dari Frontend (Register & Login Otomatis)
+    Endpoint untuk Google Sign-In (Mendukung data POST Form & JSON, mengembalikan respon JSON)
     """
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            id_token = data.get('id_token')
+            # Ambil token dari POST parameter form
+            id_token = request.POST.get('id_token')
             
+            # Jika tidak ditemukan (karena dikirim via fetch JSON), coba baca dari request body
             if not id_token:
-                return JsonResponse({'status': 'error', 'message': 'Token tidak ditemukan'}, status=400)
+                try:
+                    data = json.loads(request.body)
+                    id_token = data.get('id_token')
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            if not id_token:
+                messages.error(request, 'Token tidak ditemukan dari Google Sign-In')
+                return redirect('users:login')
 
             # 1. Verifikasi ID Token dari Firebase Google Sign-In
             decoded_token = auth.verify_id_token(id_token)
             uid = decoded_token['uid']
-            email = decoded_token.get('email')
-            username = decoded_token.get('name', email.split('@')[0])
-            picture = decoded_token.get('picture', '')
+            email = decoded_token.get('email', '')
+            
+            username_google = decoded_token.get('name', email.split('@')[0])
+            picture_google = decoded_token.get('picture', '/static/images/default-avatar.png')
 
-            # 2. Cek atau Buat/Update dokumen profil di Firestore
+            # 2. Cek/Simpan data ke Firestore
             user_ref = db.collection('users').document(uid)
             doc = user_ref.get()
 
             if not doc.exists:
-                db.collection('users').document(uid).set({
-                    'username': username,
+                user_ref.set({
+                    'username': username_google,
                     'email': email,
                     'phone': '',
                     'bio': '',
-                    'avatar': picture,
+                    'avatar': picture_google,
                     'is_online': True,
                     'created_at': firestore.SERVER_TIMESTAMP
                 })
-                avatar_terpakai = picture
-                username_terpakai = username
+                username_final = username_google
+                avatar_final = picture_google
             else:
                 user_data = doc.to_dict()
-                username_terpakai = user_data.get('username', username)
-                avatar_terpakai = user_data.get('avatar', picture)
-                
-                # Set status user menjadi online
-                user_ref.update({
-                    'is_online': True
-                })
+                username_final = user_data.get('username', username_google)
+                avatar_final = user_data.get('avatar', picture_google)
+                user_ref.update({'is_online': True})
 
-            # 3. Sinkronisasi data ke Session Django agar user terhitung LOGIN
+            # 3. Sinkronisasi Session Django secara mutlak
             request.session['firebase_user_uid'] = uid
-            request.session['username'] = username_terpakai
-            request.session['avatar'] = avatar_terpakai
+            request.session['username'] = username_final
+            request.session['avatar'] = avatar_final
+            request.session['email'] = email  # Sesuai kebutuhan fungsi add_contact Anda!
             request.session.modified = True
 
-            return JsonResponse({'status': 'success', 'redirect_url': '/chat/'}) # Arahkan ke chat list setelah sukses
+            # 4. ALUR UTAMA: Kirim respon sukses beserta URL tujuan
+            return redirect('chat:chat_list')
 
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': f'Autentikasi gagal: {str(e)}'}, status=401)
+            messages.error(request, f"Autentikasi Google gagal: {str(e)}")
+            return redirect('users:login')
 
-    return JsonResponse({'status': 'error', 'message': 'Metode tidak diizinkan'}, status=405)
-
+    messages.error(request, 'Metode tidak diizinkan')
+    return redirect('users:login')
 
 @csrf_exempt
 def login_view(request):
+    """
+    Endpoint khusus untuk Login menggunakan Email & Password manual.
+    Logika Google telah dipindahkan sepenuhnya ke google_auth.
+    """
     if request.method == 'POST':
-        # --- SKENARIO A: JIKA LOGIN MENGGUNAKAN GOOGLE (DARI FRONTEND FETCH/AJAX) ---
-        if request.headers.get('Content-Type') == 'application/json' or request.META.get('CONTENT_TYPE') == 'application/json':
-            try:
-                data = json.loads(request.body)
-                id_token = data.get('id_token')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        
+        try:
+            # 1. Verifikasi login ke Firebase Auth REST API resmi
+            url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}"
+            payload = {
+                "email": email,
+                "password": password,
+                "returnSecureToken": True
+            }
+            
+            response = requests.post(url, json=payload)
+            data = response.json()
+            
+            if response.status_code == 200:
+                user_firebase_uid = data['localId']
                 
-                if not id_token:
-                    return JsonResponse({'status': 'error', 'message': 'Token tidak ditemukan'}, status=400)
+                # 2. Ambil data dari Firestore
+                username_dari_firestore = data.get('displayName', email.split('@')[0])
+                avatar_dari_firestore = '/static/images/default-avatar.png'
                 
-                # 1. Verifikasi ID Token Google
-                decoded_token = auth.verify_id_token(id_token)
-                uid = decoded_token['uid']
-                email = decoded_token.get('email')
-                
-                # 2. Ambil data profil dari Firestore
-                user_ref = db.collection('users').document(uid)
-                user_doc = user_ref.get()
-                
-                if not user_doc.exists:
-                    # Auto-register ke Firestore jika dokumen belum ada
-                    username_baru = decoded_token.get('name', email.split('@')[0])
-                    avatar_baru = decoded_token.get('picture', '')
-                    user_ref.set({
-                        'username': username_baru,
-                        'email': email,
-                        'phone': '',
-                        'bio': '',
-                        'avatar': avatar_baru,
-                        'is_online': True
-                    })
-                    username_dari_firestore = username_baru
-                    avatar_dari_firestore = avatar_baru
-                else:
-                    user_data = user_doc.to_dict()
-                    username_dari_firestore = user_data.get('username')
-                    avatar_dari_firestore = user_data.get('avatar')
-                    user_ref.update({'is_online': True})
+                try:
+                    user_doc = db.collection('users').document(user_firebase_uid).get()
+                    if user_doc.exists:
+                        user_data = user_doc.to_dict()
+                        username_dari_firestore = user_data.get('username', username_dari_firestore)
+                        avatar_dari_firestore = user_data.get('avatar', avatar_dari_firestore)
+                        db.collection('users').document(user_firebase_uid).update({
+                            'is_online': True
+                        })
+                except Exception as doc_error:
+                    print(f"Gagal mengambil data dari Firestore: {doc_error}")
                 
                 # 3. Simpan data user ke Session Django
-                request.session['firebase_user_uid'] = uid
+                request.session['firebase_user_uid'] = user_firebase_uid
                 request.session['username'] = username_dari_firestore
                 request.session['avatar'] = avatar_dari_firestore
                 request.session.modified = True
                 
-                return JsonResponse({'status': 'success', 'redirect_url': '/chat/'})
-                
-            except Exception as e:
-                return JsonResponse({'status': 'error', 'message': f'Login Google gagal: {str(e)}'}, status=401)
-        
-        # --- SKENARIO B: ALUR LOGIN BIASA (EMAIL & PASSWORD FORM HTML) ---
-        else:
-            email = request.POST.get('email')
-            password = request.POST.get('password')
+                return redirect('chat:chat_list')
             
-            try:
-                # 1. Melakukan verifikasi login ke Firebase Auth REST API resmi
-                url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}"
-                payload = {
-                    "email": email,
-                    "password": password,
-                    "returnSecureToken": True
-                }
+            else:
+                error_message = data.get('error', {}).get('message', 'INVALID_LOGIN_CREDENTIALS')
+                if error_message in ["EMAIL_NOT_FOUND", "INVALID_PASSWORD", "INVALID_LOGIN_CREDENTIALS"]:
+                    return render(request, 'users/login.html', {'error': 'Email atau password yang kamu masukkan salah!'})
+                return render(request, 'users/login.html', {'error': f'Login gagal: {error_message}'})
                 
-                response = requests.post(url, json=payload)
-                data = response.json()
-                
-                if response.status_code == 200:
-                    user_firebase_uid = data['localId']
-                    
-                    # 2. Ambil data dari Firestore
-                    username_dari_firestore = None
-                    avatar_dari_firestore = None
-                    try:
-                        user_doc = db.collection('users').document(user_firebase_uid).get()
-                        if user_doc.exists:
-                            user_data = user_doc.to_dict()
-                            username_dari_firestore = user_data.get('username')
-                            avatar_dari_firestore = user_data.get('avatar')
-                            db.collection('users').document(user_firebase_uid).update({
-                                'is_online': True
-                            })
-                    except Exception as doc_error:
-                        print(f"Gagal mengambil data dari Firestore: {doc_error}")
-                    
-                    if not username_dari_firestore:
-                        username_dari_firestore = data.get('displayName', email.split('@')[0])
-                    
-                    # 3. Simpan data user ke Session Django
-                    request.session['firebase_user_uid'] = user_firebase_uid
-                    request.session['username'] = username_dari_firestore
-                    request.session['avatar'] = avatar_dari_firestore
-                    request.session.modified = True
-                    
-                    return redirect('chat:chat_list')
-                
-                else:
-                    error_message = data.get('error', {}).get('message', 'INVALID_LOGIN_CREDENTIALS')
-                    if error_message in ["EMAIL_NOT_FOUND", "INVALID_PASSWORD", "INVALID_LOGIN_CREDENTIALS"]:
-                        return render(request, 'users/login.html', {'error': 'Email atau password yang kamu masukkan salah!'})
-                    return render(request, 'users/login.html', {'error': f'Login gagal: {error_message}'})
-                    
-            except Exception as e:
-                return render(request, 'users/login.html', {'error': f'Koneksi error: {str(e)}'})
-                
+        except Exception as e:
+            return render(request, 'users/login.html', {'error': f'Koneksi error: {str(e)}'})
+            
     return render(request, 'users/login.html')
 
 def logout_view(request):

@@ -8,34 +8,28 @@
     <div class="auth-card">
         <h2>Daftar OWI Chat</h2>
 
-        <div id="js-error" class="alert alert-danger" style="display: none;"></div>
         {% if error %}
         <div class="alert alert-danger">{{ error }}</div>
         {% endif %}
 
         <form method="POST" class="auth-form">
             {% csrf_token %}
-
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" class="form-control" required>
             </div>
-
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" class="form-control" required>
             </div>
-
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" class="form-control" required>
             </div>
-
             <div class="form-group">
                 <label for="password2">Konfirmasi Password</label>
-                <input type="password2" id="password2" name="password2" class="form-control" required>
+                <input type="password" id="password2" name="password2" class="form-control" required>
             </div>
-
             <button type="submit" class="btn btn-primary">Daftar</button>
         </form>
 
@@ -45,77 +39,84 @@
                 style="background: #fff; padding: 0 10px; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);">atau</span>
         </div>
 
-        <button id="google-sign-in-btn" class="btn btn-google"
-            style="display: flex; align-items: center; justify-content: center; width: 100%; background: #fff; color: #757575; border: 1px solid #dadce0; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">
-            <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_24dp.png"
-                alt="Google Logo" style="width: 20px; margin-right: 10px;">
-            Daftar dengan Google
+        <button id="google-btn" type="button" class="btn btn-google"
+            style="display: flex; align-items: center; justify-content: center; width: 100%; background: #fff; color: #757575; border: 1px solid #dadce0; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px" style="margin-right: 10px;">
+                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C41.142,35.08,44,29.897,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+            <span id="google-btn-text">Daftar dengan Google</span>
         </button>
 
-        <p class="auth-link" style="margin-top: 20px;">
+        <p class="auth-link" style="margin-top: 20px; text-align: center;">
             Sudah punya akun? <a href="{% url 'users:login' %}">Login di sini</a>
         </p>
     </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<form id="google-hidden-form" method="POST" action="{% url 'users:google_auth' %}" style="display: none !important;">
+    {% csrf_token %}
+    <input type="hidden" id="hidden-id-token" name="id_token">
+</form>
 
-<script>
-    // 2. Konfigurasi Firebase Web App Anda
-    // Salin data ini dari Project Settings -> bagian "Your Apps" -> Web App di Firebase Console Anda
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // PENTING: Paksa penggunaan 'localhost' untuk menghindari error popup tertutup (CORS/Cookie policy)
+    if (window.location.hostname === '127.0.0.1') {
+        window.location.hostname = 'localhost';
+    }
+
     const firebaseConfig = {
-        apiKey: "AIzaSyD9l4LlyC641lKqAMPS1tUPylyGWBWlto4", // Samakan dengan Web API Key Anda
-        authDomain: "PROYEK_KAMU.firebaseapp.com",        // Ganti dengan authDomain proyek Anda
-        projectId: "PROYEK_KAMU",                         // Ganti dengan project ID Anda
-        storageBucket: "PROYEK_KAMU.appspot.com",
-        messagingSenderId: "XXXXXXXXXXXX",
-        appId: "X:XXXX:web:XXXX"
+        apiKey: "AIzaSyD9l4LlyC641lKqAMPS1tUPylyGWBWlto4",
+        authDomain: "chat-9d8da.firebaseapp.com",
+        projectId: "chat-9d8da",
+        storageBucket: "chat-9d8da.firebasestorage.app",
+        messagingSenderId: "169047224061",
+        appId: "1:169047224061:web:7ab24de85d44cbed651588"
     };
 
-    // Inisialisasi Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const provider = new firebase.auth.GoogleAuthProvider();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
-    // 3. Logika Klik Tombol Google Sign-In
-    document.getElementById('google-sign-in-btn').addEventListener('click', function () {
-        const errorDiv = document.getElementById('js-error');
-        errorDiv.style.display = 'none'; // Sembunyikan error sebelumnya jika ada
+    // 2. Tombol Google Sign-In menggunakan Popup (Lebih andal dari Redirect)
+    const googleBtn = document.getElementById('google-btn');
+    if (googleBtn) {
+        googleBtn.addEventListener('click', async () => {
+            try {
+                const btnText = document.getElementById('google-btn-text');
+                if (btnText) btnText.innerText = "Memproses Login...";
 
-        firebase.auth().signInWithPopup(provider)
-            .then((result) => {
-                // Berhasil login ke Google, ambil ID Token user
-                return result.user.getIdToken();
-            })
-            .then((idToken) => {
-                // 4. Kirim ID Token tersebut ke Backend Django via Fetch API
-                return fetch("{% url 'users:google_auth' %}", { // Pastikan name url sesuai dengan urls.py Anda (misal: google_auth)
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        // Jika tidak memakai @csrf_exempt di backend, sertakan token csrf di bawah ini:
-                        // 'X-CSRFToken': '{{ csrf_token }}' 
-                    },
-                    body: JSON.stringify({ id_token: idToken })
-                });
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // Jika backend sukses memproses session, redirect user ke halaman utama/chat list
-                    window.location.href = data.redirect_url;
+                // Tampilkan Popup Google Sign-In
+                const result = await signInWithPopup(auth, provider);
+                const idToken = await result.user.getIdToken();
+                
+                // Kirim token ke Django via Form Submission (Paling Andal)
+                const hiddenForm = document.getElementById('google-hidden-form');
+                if (hiddenForm) {
+                    document.getElementById('hidden-id-token').value = idToken;
+                    hiddenForm.submit();
                 } else {
-                    // Tampilkan pesan error jika backend mengembalikan status gagal
-                    errorDiv.innerText = data.message;
-                    errorDiv.style.display = 'block';
+                    alert("Error: Form hidden tidak ditemukan!");
                 }
-            })
-            .catch((error) => {
-                console.error("Error Autentikasi Google:", error);
-                errorDiv.innerText = "Gagal melakukan otentikasi dengan Google: " + error.message;
-                errorDiv.style.display = 'block';
-            });
-    });
+
+            } catch (error) {
+                console.error("Error:", error);
+                const btnText = document.getElementById('google-btn-text');
+                if (btnText) btnText.innerText = "Daftar dengan Google";
+                
+                if (error.code === 'auth/popup-closed-by-user') {
+                    // Abaikan jika user hanya menutup jendela
+                    console.log("Jendela popup ditutup oleh user.");
+                } else {
+                    alert("Gagal memulai Google Sign-In: " + error.message);
+                }
+            }
+        });
+    }
 </script>
 {% endblock %}
