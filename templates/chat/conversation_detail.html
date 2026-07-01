@@ -72,6 +72,9 @@
 
     <div class="chat-main">
         <div class="chat-header">
+            <a href="{% url 'chat:chat_list' %}" class="btn-back-mobile" style="display: none; margin-right: 15px; color: #333; font-size: 18px; text-decoration: none;">
+                <i class="fas fa-arrow-left"></i>
+            </a>
             <div class="header-avatar" style="margin-right: 15px;">
                 {% if conversation.conversation_type != 'group' %}
                 {% for participant in conversation.participants.all %}
@@ -528,6 +531,46 @@
 
     .message:hover .btn-delete-msg {
         opacity: 1;
+    }
+
+    .btn-back-mobile {
+        display: none;
+    }
+
+    /* Mobile Responsive Adjustments */
+    @media (max-width: 768px) {
+        .chat-sidebar {
+            display: none !important;
+        }
+        .chat-container {
+            height: calc(100vh - 60px);
+            flex-direction: column;
+        }
+        .btn-back-mobile {
+            display: flex !important;
+            align-items: center;
+        }
+        .message-content {
+            max-width: 85%;
+        }
+        .chat-header {
+            padding: 10px 15px;
+        }
+        .messages-container {
+            padding: 15px 10px;
+        }
+        .chat-input-area {
+            padding: 10px;
+        }
+        .input-wrapper {
+            gap: 8px;
+        }
+        .btn-attach {
+            font-size: 16px;
+        }
+        .whatsapp-file-card {
+            width: 100%;
+        }
     }
 </style>
 {% endblock %}
